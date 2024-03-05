@@ -1,0 +1,284 @@
+---
+title: "Marker identification and automated clustering based on gene activities"
+author: "Ivan Berest and Christian Arnold"
+output:
+  html_document:
+    toc: yes
+    df_print: paged
+  html_notebook:
+    toc: yes
+    number_sections: no
+    toc_float: yes
+    theme: spacelab
+    code_folding: none
+  pdf_document:
+    toc: yes
+---
+
+## Goals
+
+This vignette will teach you how to quantify the activity of each gene in the genome by assessing the chromatin accessibility associated with each gene. We will create a new assay for this and add it to our `Seurat` object. Also, we will write our first R function to visualize individual genes, connect the gene activities with the UMAP we have seen before, and we will also identify the top marker genes per cluster based on the new gene activity assay!
+
+## References
+
+This vignette contains a modified version of [this
+vignette](https://satijalab.org/signac/articles/pbmc_vignette.html).
+
+
+## Load libraries 
+
+As before, we first load all necessary R packages that are needed for this vignette.
+
+```{r lib}
+
+suppressPackageStartupMessages({
+library(Signac)
+library(Seurat)
+library(tidyverse)
+library(patchwork)
+library(clustermole)
+})
+set.seed(1990)
+```
+
+
+## Load data 
+
+We begin by loading our pre-processed `Seurat` from the introductory QC vignette object into R. This code is shared among all subsequent vignettes.
+
+```{r loadData}
+# Make sure to have a trailing slash here
+outFolder="/mnt/data/cellranger/outs/"
+seu.s = readRDS(file = paste0(outFolder,"obj.filt.rds"))
+
+# Make sure we have the ATAC array in the object
+seu.s[["ATAC"]]
+
+# In case the object contains multiple assays, make the ATAC assay the standard
+DefaultAssay(seu.s) = "ATAC"
+```
+
+## Add and analyze gene activities 
+
+The UMAP visualization we have seen before reveals the presence of multiple cell groups. How can we learn more about them?
+
+Unfortunately, annotating and interpreting clusters is more
+challenging in scATAC-seq data as much less is known about the functional roles
+of non-coding genomic regions than is known about protein coding regions (genes). 
+
+However, we can try to quantify the activity of each gene in the genome by
+assessing the chromatin accessibility associated with each gene, and create a
+new gene activity assay derived from the scATAC-seq data. Here we will use a
+simple approach of summing the fragments intersecting the gene body and promoter
+region. However, the `Cicero` R package accomplishes a similar goal, see the other vignette for this!
+
+  
+### Calculate gene activities 
+
+To create a gene activity matrix, we first extract gene coordinates and then extend them
+to include the (here) 3 kb upstream region (as promoter accessibility is often correlated with gene expression) as well as 100 bp downstream region. 
+We then count the number of fragments for each cell that map to each of these regions, using the `FeatureMatrix()`
+function. These steps are automatically performed by the function `GeneActivity()` as shown below:
+
+```{r addGeneActivities}
+gene.activities <- GeneActivity(seu.s, extend.upstream = 3000, extend.downstream = 100)
+```
+
+### Create gene activity assay 
+```{r createAssay}
+# add the gene activity matrix to the Seurat object as a new assay and normalize it
+newAssayName = "geneact"
+seu.s[[newAssayName]] <- CreateAssayObject(counts = gene.activities)
+seu.s <- NormalizeData(
+  object = seu.s,
+  assay = newAssayName,
+  normalization.method = 'LogNormalize',
+  scale.factor = median(seu.s@meta.data[,paste0("nCount_",newAssayName)]) #TODO: Replace without using @
+)
+
+# Change the default assay name to our new geneact name for this vignette
+DefaultAssay(seu.s) <- newAssayName
+
+# Scaling seems necessary for the heatmap, but does it affect something else? 
+seu.s <- ScaleData(seu.s, verbose = F)
+```
+
+
+## Find markers
+
+It is time to find markers again. Here, we base the cell identities on the previously calculated embedding with resolution of 0.5. We then again invoke the `FindAllMarkers` function, but this time with the new gene activity assay! 
+
+```{r findMarkers}
+
+topMarkerGenesPerCluster = 3
+
+# Set identity of cells based on ATAC_snn_res.0.5 
+Idents(seu.s) <- seu.s$ATAC_snn_res.0.5
+markersGA <- FindAllMarkers(seu.s, only.pos = TRUE, min.pct = 0.1, logfc.threshold = 0.1, assay = newAssayName, verbose = F)
+
+gr1 = markersGA %>%
+    group_by(cluster) %>%
+    slice_max(n = topMarkerGenesPerCluster, order_by = avg_log2FC) %>%
+    ungroup()
+gr1
+
+```
+
+The new table that we just produced shows the new marker genes per cluster, along with raw and adjusted p-values, and the average log2 fold-change.
+
+### Marker genes UMAP 
+
+Now we can visualize the activities of canonical marker genes to help interpret
+our ATAC-seq clusters. Note that the activities will be much noisier than
+scRNA-seq measurements. As discussed before, this is because they represent measurements from sparse
+chromatin data, and because they assume a general correspondence between gene
+body/promoter accessibility and gene expression which may not always be the
+case. Nonetheless, we can begin to discern the various populations based on these gene activity profiles. However, further subdivision of
+these cell types is challenging based on supervised analysis alone.
+
+Before we start, let's recapitulate how the clusters look like from the UMAP:
+```{r umapPlot}
+
+res = 0.5
+
+DimPlot(object = seu.s, pt.size = 0.5, 
+            group.by = paste0("ATAC_snn_res.",res),
+            label = TRUE, repel = TRUE, label.box = TRUE) 
+
+
+```
+
+
+Now, let's visualize the top marker genes per cluster:
+```{r}
+
+for (cl in sort(unique(gr1$cluster))) {
+  
+    # get a list of all cluster-specific genes
+    fts = gr1 %>% filter(cluster == cl) %>% pull(gene)
+
+    p1 = VlnPlot(seu.s, features = fts, slot = "counts", log = TRUE)
+    p2 = FeaturePlot(seu.s, features = fts, max.cutoff = "q90", pt.size = 0.1, ncol = 3, reduction = "umap")
+    
+    # Construct the patchwork plot from both individual ones
+    pall = p1 / p2 + plot_annotation(title = paste0("Cluster ",cl))
+    print(pall)
+
+}
+
+```
+
+### Heatmap 
+
+Let's create a heatmap based on the top 15 genes per cluster, based on their average log2 fold-change. 
+
+```{r heatmap, fig.height= 10}
+top <- markersGA %>%
+    group_by(cluster) %>%
+    top_n(n = 15, wt = avg_log2FC) 
+DoHeatmap(seu.s, features = top$gene, assay = newAssayName) + NoLegend()
+```
+
+As we can see in the heatmap, each cluster has a specific set of marker genes!
+
+## Automated annotation with clustermole based on marker genes
+
+As seen and calculated before, a typical pipeline to process single-cell data (such as scRNA-seq and scATAC-seq) includes clustering of cells. Assigning cell type labels to clusters is often a time-consuming and involves manual inspection of the cluster marker genes complemented with a detailed literature search. This task becomes even more daunting in the presence of unexpected or poorly described populations. The `clustermole` R package provides methods to query thousands of human and mouse cell identity markers sourced from a variety of databases. Here, we will give it a try!
+
+```{r clustermole}
+
+# Let's first create a data frame with the top 30 markers according to the average log2 fold-change
+topMarkers <- markersGA %>%
+    group_by(cluster) %>%
+    top_n(n = 30, wt = avg_log2FC) 
+
+# We now create a new list in which we store the cluster-specific annotation of marker genes
+celltypes.l = list()
+for (cluster.id in unique(top$cluster)){
+  celltypes.l[[cluster.id]] = clustermole_overlaps(genes = topMarkers %>% filter(cluster == cluster.id) %>% pull(gene), species = "mm") %>% filter(species == "Mouse")
+
+}
+# How does our list look like? let's check for clusters 0 and 1
+celltypes.l[["0"]]
+celltypes.l[["1"]]
+```
+
+
+## Visualise genomic tracks for selected genes 
+
+Let's visualize a particular gene. As we will re-use this functionality in a more general context (for a whole cluster) in the next chunk as well, we will here write our first own function to minimize code repetition!
+```{r}
+
+visualizeSingleGene <- function(obj, geneName, rangeUp = 5000, rangeDown = 5000, dimReductionName) {
+  
+  cov_plot <- CoveragePlot(object = obj, region = geneName, 
+                          extend.upstream = rangeUp,extend.downstream = rangeDown,
+                          features = geneName, expression.assay = "geneact",
+                          annotation = TRUE, peaks = TRUE, links = FALSE,  assay = "ATAC")
+  
+  tile_plot <- TilePlot(object = obj, region = geneName,
+                        idents = unique(FetchData(obj, vars = dimReductionName)[,dimReductionName]),
+                        extend.upstream = rangeUp, extend.downstream = rangeDown,
+                        tile.cells = 50, assay = "ATAC")
+  
+  p = CombineTracks(
+    plotlist = list(cov_plot, tile_plot),
+    heights = c(10,5)
+  )
+  plot(p)
+}
+
+visualizeSingleGene(obj = seu.s, geneName = "Syne3", dimReductionName = "ATAC_snn_res.0.5")
+
+```
+
+Now, let's make use of our new function and run this for all genes from a particular cluster, here cluster `0` as an example:
+
+```{r}
+
+# Use one cluster as example
+cluster = "1"
+
+# Get the top 5 genes w.r.t average log2 fold-change
+genes_top = gr1 %>% 
+    dplyr::filter(cluster == cluster) %>% 
+    dplyr::arrange(desc(avg_log2FC)) %>% 
+    dplyr::top_n(n = 3) %>% 
+    dplyr::pull(gene)
+
+for (gene in genes_top) {
+
+  visualizeSingleGene(obj = seu.s, geneName = gene, dimReductionName = "ATAC_snn_res.0.5")
+  
+}
+
+```
+As you can see from the output, we here plotted the top 3 genes for a particular cluster, feel free to use our new function to plot any gene you want, or to plot the top genes from a different cluster!
+
+
+
+## Save object to disk
+
+We reached the end of the vignette. We again save our updated `Seurat` object to disk with a new name, in analogy
+to what we did in the other vignettes.
+
+```{r saveObject2}
+saveRDS(seu.s, file = paste0(outFolder,"obj.filt.geneActivity.rds"))
+
+```
+
+## Further reading
+
+We will add additional references related to the content of this vignette soon, stay tuned!
+
+## Session info
+
+It is good practice to print the so-called session info at the end of an
+R script, which prints all loaded libraries, their versions etc. This
+can be helpful for reproducibility and recapitulating which package
+versions have been used to produce the results obtained above.
+
+```{r sessionInfo}
+sessionInfo()
+```
+
