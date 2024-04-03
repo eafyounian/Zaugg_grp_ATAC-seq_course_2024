@@ -1,0 +1,421 @@
+---
+title: "Trajectory analysis using Monocle"
+author: "Ivan Berest and Christian Arnold"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+execute:
+  warning: false
+format: 
+  html:
+    theme: lumen
+    max-width: 2000px
+    code-fold: true
+    code-summary: "Show the code"
+    self-contained: true
+    toc: true
+    toc-location: right
+    smooth-scroll: true
+---
+
+## Goals
+
+This vignette will introduce you to [Monocle 3](https://cole-trapnell-lab.github.io/monocle3/), an R package that provides a toolkit for the analysis of single-cell expression and accessibility data. We will use it for constructing single-cell accessibility trajectories and pseudotime analyses, and combine it with the previously calculated TF activity scores to identify TFs that may change their activity in a trajectory-dependent way! An exciting set of analyses and integrations is ahead of us.
+
+
+## References
+
+This vignette is a modified version of [this
+vignette](https://satijalab.org/signac/1.2.0/articles/cicero.html) and [this vignette]( https://cole-trapnell-lab.github.io/cicero-release/docs_m3) as well as [this website](https://cole-trapnell-lab.github.io/monocle3/docs/trajectories/).
+
+
+## Load libraries
+
+As before, we first load all necessary R packages that are needed for this vignette.
+
+```{r lib}
+
+suppressPackageStartupMessages({
+library(Signac)
+library(Seurat)
+library(SeuratWrappers)
+library(monocle3)
+library(tidyverse)
+library(patchwork)
+library(scales)
+library(ComplexHeatmap)
+library(circlize)
+library(RColorBrewer)
+})
+set.seed(1990)
+```
+
+
+## Load data 
+
+We begin by loading our pre-processed `Seurat` object. In most vignettes, we took the object from the introductory QC vignette into R; however here, we will use the final object from the TF analysis vignette  because we will need the `chromAVR` derived TF activity scores here as well!
+
+```{r loadData}
+# Specify the path to the "outs" folder from cellranger-atac here 
+# Make sure to have a trailing slash here
+outFolder="/mnt/data/cellranger/outs/"
+outFolder="/g/zaugg/zaugg_shared/Courses_and_Teaching/ATAC-Seq_Course/2024/testdata/test_lifminus/outs/"
+
+# This time, we load a different object at the beginning
+seu.s = readRDS(file = paste0(outFolder,"obj.filt.TFAnalysis.rds"))
+
+DefaultAssay(seu.s) <- 'ATAC'
+
+# Let's make sure we are working with correct clusters
+Idents(seu.s)  = seu.s$ATAC_snn_res.0.5
+
+```
+
+
+## Running `Monocle`
+
+Before we start, let us recap some general information about the `Monocle 3` package. It has been designed for single-cell RNA-seq data, and its main types of analysis are:
+- Clustering, classifying, and counting cells. scRNA-Seq experiments allow you to discover new (and possibly rare) subtypes of cells.
+- Constructing single-cell trajectories. In development, disease, and throughout life, cells transition from one state to another.
+- Differential expression analysis. Characterizing new cell types and states begins with comparisons to other
+
+In this vignette, we will mainly focus on constructing single-cel  accessibility trajectories, which in combination with the `Cicero` package can also be used with scATAC-seq data. The first type of analysis we have already done before for scATAC-seq data, while the last analysis - differential expression analysis - can be replaced by differential accessibility analyses also with the help of `Cicero`.
+
+### Convert to `cell_data_set` format
+```{r cellDataSet}
+
+
+traj.cds <- as.cell_data_set(seu.s, graph = "ATAC_snn")
+traj.cds <- cluster_cells(cds = traj.cds, reduction_method = "UMAP", graph = "ATAC_snn")
+
+
+```
+
+
+### Learn principal graph from the reduced dimension space using reversed graph embedding
+
+`Monocle3` aims to learn how cells transition through a biological program of gene expression changes in an experiment. Each cell can be viewed as a point in a high-dimensional space, where each dimension describes the expression of a different gene. Identifying the program of gene expression changes is equivalent to learning a trajectory that the cells follow through this space. However, the more dimensions there are in the analysis, the harder the trajectory is to learn. Fortunately, many genes typically co-vary with one another, and so the dimensionality of the data can be reduced with a wide variety of different algorithms. `Monocle3` provides two different algorithms for dimensionality reduction via `Monocle3` (UMAP and tSNE). Both take a `Monocle3` object and a number of dimensions allowed for the reduced space. You can also provide a model formula indicating some variables (e.g. batch ID or other technical factors) to "subtract" from the data so it doesn't contribute to the trajectory. The function `Monocle3` is the fourth step in the trajectory building process after `preprocess_cds`, `reduce_dimension`, and `cluster_cells`. After `learn_graph`, `order_cells` is typically called.
+
+
+#### Explore with `minimal_branch_len` 1
+
+To get a better understanding and feeling for the data, we are now exploring the effect of one of the parameters for the `learn_graph` function: The customization that is possible via the `learn_graph_control` parameter, which contains a subparameter called `minimal_branch_len`. First, use the R help to understand what it does!
+
+As you have read by now (hopefully), `minimal_branch_len` denotes the length of the diameter path for a branch to be preserved during graph pruning procedure, with a default is 10. Here, we try a minimal value of 1 first:
+
+After learning the graph, let's first plot the cells along with their trajectories to get a general overview. At this point, we first have to see the general graph before deciding on a potential root node - the origin of the trajectory. Without this guess, we cannot call the `order_cells` function - the last step in the aforementioned `Monocle3` trajectory building process!
+
+```{r learnGraph}
+traj.cds <- learn_graph(traj.cds, use_partition = TRUE, close_loop = FALSE, 
+                        learn_graph_control = list(rann.k = 20, minimal_branch_len = 1))
+
+# Plots the cells along with their trajectories.
+plot_cells(cds = traj.cds, show_trajectory_graph = TRUE, 
+           color_cells_by = "ATAC_snn_res.0.5",
+           label_cell_groups = TRUE,
+           cell_size = 0.75, alpha = .4, 
+           label_principal_points = FALSE)
+
+```
+
+
+#### Explore with `minimal_branch_len` 3 
+
+Let's repeat the same, but with a higher value for `minimal_branch_len`. If you want, create your own function that runs both `learn_graph` and `plot_cells` with `minimal_branch_len` as a paramter to avoid code redundancy!
+
+```{r learnGraph2}
+traj.cds <- learn_graph(traj.cds, use_partition = TRUE, close_loop = FALSE, 
+                        learn_graph_control = list(rann.k = 20, minimal_branch_len = 3))
+
+
+plot_cells(cds = traj.cds, show_trajectory_graph = TRUE, 
+           color_cells_by = "ATAC_snn_res.0.5",
+           label_cell_groups = TRUE,
+           cell_size = 0.75, alpha = .4, 
+           label_principal_points = FALSE)
+
+# Learn what the two parameters that we change here do!
+plot_cells(cds = traj.cds, show_trajectory_graph = TRUE, 
+           color_cells_by = "ATAC_snn_res.0.5",
+           label_cell_groups = FALSE,
+           cell_size = 0.75, alpha = .4,
+           label_principal_points = TRUE)
+```
+
+The black lines show the structure of the graph. Note that the graph is not fully connected: cells in different partitions are in distinct components of the graph. The circles with numbers in them denote special points within the graph. Each leaf, denoted by light gray circles, corresponds to a different outcome (i.e. cell fate) of the trajectory. Black circles indicate branch nodes, in which cells can travel to one of several outcomes. You can control whether or not these are shown in the plot with the label_leaves and label_branch_points arguments to plot_cells. Please note that numbers within the circles are provided for reference purposes only.
+
+Now that we have a sense of where the early cells fall, we can call `order_cells()`, which will calculate where each cell falls in pseudotime. In order to do so `order_cells()` needs you to specify the root nodes of the trajectory graph. If you don't provide them as an argument, it will launch a graphical user interface for selecting one or more root nodes (see the line that is commented out in the chunk above).
+
+Note that some of the cells are gray. This means they have infinite pseudotime, because they were not reachable from the root nodes that were picked. In general, any cell on a partition that lacks a root node will be assigned an infinite pseudotime. In general, you should choose at least one root per partition.
+
+### Cell ordering and pseudotime generation
+
+Once we've learned a graph, we are ready to order the cells according to their progress through the developmental program. `Monocle` measures this progress in *pseudotime*, a measure of how much progress an individual cell has made through a process such as cell differentiation.
+
+Let's dive a bit more into the concept of pseudotime. In many biological processes, cells do not progress in perfect synchrony. In single-cell expression studies of processes such as cell differentiation, captured cells might be widely distributed in terms of progress. That is, in a population of cells captured at exactly the same time, some cells might be far along, while others might not yet even have begun the process. This asynchrony creates major problems when you want to understand the sequence of regulatory changes that occur as cells transition from one state to the next. Tracking the expression across cells captured at the same time produces a very compressed sense of a gene's kinetics, and the apparent variability of that gene's expression will be very high.
+
+By ordering each cell according to its progress along a learned trajectory, `Monocle` alleviates the problems that arise due to asynchrony. Instead of tracking changes in expression as a function of time, `Monocle` tracks changes as a function of progress along the trajectory, which is termed *pseudotime*. Pseudotime is an abstract unit of progress: it's simply the distance between a cell and the start of the trajectory, measured along the shortest path. The trajectory's total length is defined in terms of the total amount of transcriptional change that a cell undergoes as it moves from the starting state to the end state.
+
+Thus, we can assigns cells a pseudotime value based on their projection on the principal graph learned in the `learn_graph` function and the position of chosen root states. This function takes as input a `cell_data_set` and returns it with pseudotime information stored internally. `order_cells()` optionally takes "root" state(s) in the form of cell or principal graph node IDs, which you can use to specify the start of the trajectory. If you don't provide a root state, an plot will be generated where you can choose the root state(s) interactively. The trajectory will be composed of segments.
+
+How do we identify the starting point of differentiation, which is often denoted the `root node` for trajectory analyses? In order to place the cells in order, we need to tell` Monocle` where the "beginning" of the biological process is. We do so by choosing regions of the graph that we mark as "roots" of the trajectory. In time series experiments, this can usually be accomplished by finding spots in the UMAP space that are occupied by cells from early time points. Here, for our data and the biology, one strategy is to look for pluripotency signatures, which indicates here that cluster `1` may be the origin.
+
+
+```{r orderCells}
+
+# If you dont provide root_pr_nodes, an interactive window opens
+# traj.cds <- order_cells(traj.cds, reduction_method = "UMAP")
+traj.cds <- order_cells(traj.cds, reduction_method = "UMAP", root_pr_nodes = c("Y_15","Y_28","Y_3"))
+
+
+# plot trajectories colored by pseudotime
+plot_cells(cds = traj.cds, show_trajectory_graph = TRUE, 
+           color_cells_by = "pseudotime",
+           cell_size = 0.75, alpha = .4, 
+           label_principal_points = TRUE)
+```
+
+
+
+We just ordered cells and identified different potential trajectories! Let us explore them in more detail! For this, we will use `choose_graph_segments` to choose cells along the path of a principal graph. This allows us to essentially group the cells into different subsets, based on specific trajectories.
+
+In general, it's often desirable to specify the root of the trajectory programmatically, rather than manually picking it as we did above. This can be done by first grouping the cells according to which trajectory graph node they are nearest to. Then, one can calculate what fraction of the cells at each node come from the earliest time point. Then one picks the node that is most heavily occupied by early cells and returns that as the root. For a specific example, take a look at the function `get_earliest_principal_node` [here](https://cole-trapnell-lab.github.io/monocle3/docs/trajectories/). **A task for those who like being challenged: Can you adapt the function for your data and identify which root node it picks?**
+
+
+### Splitting into different subpopulations based on the infered trajectory
+
+In general, it is often useful to subset cells based on their branch in the trajectory. let's try this out now in practise!
+
+#### Creating a helper function
+
+From the data we gathered, one could argue that cluster 3 has cells differentiating into the mesoderm lineage (vascular, immune related genes/TFs), and a lot of activity-induced Jun/Fos genes. Let's create a hypothetical mesoderm-specific cell subset. Because we will re-use the same code for other cell subsets, we again write a small custom function here which takes the set of starting and ending nodes as input and outputs a subset object as well as some plots.
+
+```{r subsetAndPlotTrajectoryFucntion}
+
+subsetAndPlotTrajectory <- function(obj, startingNodes, endNodes) {
+    
+    # traj.cds.sub  = choose_graph_segments(traj.cds, clear_cds = F) # interactive
+    obj.sub  = choose_graph_segments(obj, clear_cds = FALSE,
+                                          starting_pr_node = startingNodes, # only one 
+                                          ending_pr_nodes = endNodes)
+    
+    # We can now order the cells based on the subset
+    obj.sub  <- order_cells(obj.sub, reduction_method = "UMAP", root_pr_nodes = startingNodes)
+    
+    plot_cells(cds = obj.sub, show_trajectory_graph = TRUE, 
+               color_cells_by = "pseudotime",
+               cell_size = 0.75, alpha = .4, 
+               label_principal_points = FALSE) %>% plot()
+    
+    plot_cells(cds = obj.sub, show_trajectory_graph = TRUE, 
+               color_cells_by = "ATAC_snn_res.0.5",
+               label_cell_groups = FALSE,
+               cell_size = 0.75, alpha = .4, 
+               label_principal_points = FALSE) %>% plot()
+    
+    obj.sub
+    
+}
+
+```
+
+#### Hypothetical mesoderm cells
+
+We can now try and run our new function:
+
+```{r subsetAndPlotTrajectory1}
+meso.traj.sub = subsetAndPlotTrajectory(traj.cds, startingNodes = c("Y_3"), endNodes = c("Y_23"))
+```
+
+
+#### Hypothetical neuronal cells
+
+Let's do the same for potentially neuronal cells:
+
+```{r subsetAndPlotTrajectory2}
+
+neu.traj.sub = subsetAndPlotTrajectory(traj.cds, startingNodes = c("Y_3"), endNodes = c("Y_16","Y_13","Y_32"))
+
+```
+
+### Hypothetical heterogenous cells
+
+Lastly, a group of heterogeneous cells:
+
+```{r subsetAndPlotTrajectory3}
+
+und.traj.sub = subsetAndPlotTrajectory(traj.cds, startingNodes = c("Y_3"), endNodes = c("Y_4"))
+
+```
+
+##  Visualize pseudotime per TF 
+
+We will now try to combine the pseudotime and trajectory analyses in combination with the `chromVAR` derived TF activity scores to find out whether some TFs are changing their activity with pseudotime.
+
+## Add pseudotime to `Seurat` object
+
+Let's first add the pseudotime to our original `Seurat` object in the form of additional metadata! This will allow us to color cells by their pseudotime, subset the object according to it, and so forth. We will create 3 groups here, one for each of our hypothesized cell populations! 
+
+```{r addPseudotimeSeurat}
+
+# Add pseudotime information from each of the 3 sub-populations we identified before
+
+seu.s <- AddMetaData(
+  object = seu.s,
+  metadata = neu.traj.sub@principal_graph_aux@listData$UMAP$pseudotime,
+  col.name = "pseudotime.neu"
+)
+
+seu.s <- AddMetaData(
+  object = seu.s,
+  metadata = meso.traj.sub@principal_graph_aux@listData$UMAP$pseudotime,
+  col.name = "pseudotime.meso"
+)
+
+seu.s <- AddMetaData(
+  object = seu.s,
+  metadata = und.traj.sub@principal_graph_aux@listData$UMAP$pseudotime,
+  col.name = "pseudotime.und"
+)
+
+# Create a separate Seurat object for each trajectory 
+seu.sub.neu = subset(seu.s, subset = pseudotime.neu > 0)
+seu.sub.meso = subset(seu.s, subset = pseudotime.meso > 0)
+seu.sub.und = subset(seu.s, subset = pseudotime.und > 0)
+```
+
+
+### TF visualisation 
+
+Now, we will try to visualize the TF activity that we derived before in the TF analysis vignette and use the `chromVAR` scores for the  accessibility trajectories. In order to minimize code repetition, we will again write a custom function so that we can call it for different TFs and the different cell subsets we created before in an easy and reproducible manner:
+ 
+```{r visualizeTFTrajectoryFunction}
+
+visualizeTFTrajectory <- function (TF, obj, pseudotimeColName, trajectoryName, ylim = c(-5,7)) {
+    
+    df = tibble(pseudotime = obj@meta.data[[c(pseudotimeColName)]],
+                TF         = obj@assays$chromvar@data[TF,]) %>%
+         mutate(pseudotime.sc = rescale(pseudotime, to = c(0,100)))
+
+    # ylim = c(floor(range(df$TF)[1]),ceiling(range(df$TF)[2]))
+    
+    g = ggplot(df, aes(x = pseudotime.sc, y = TF, color = pseudotime.sc)) + 
+        geom_point() + 
+        xlab("Pseudotime, %") + ylab("chromVAR: TF activity") + ylim(ylim) + 
+        scale_color_viridis_c(option = "B") + 
+        geom_smooth(method = "loess") +  # Jitter on x-axis a bit 
+        ggtitle(trajectoryName)
+    
+    plot(g)
+
+}
+
+```
+
+Feel free to customize this function even further and to add function parameters for increased flexibility. For example, you may want to add an argument that determines the rescaling in a more flexible manner rather than the hard-coded `c(0,100)` in the current version, or the pseudotime coloring.
+
+Nevertheless, let's try our new function for some TFs. We start with `PITX1-MOUSE.H11MO.0.C`:
+
+```{r plotTFTrajectory}
+
+TF = "PITX1-MOUSE.H11MO.0.C"
+
+visualizeTFTrajectory(TF = TF, 
+                      obj = seu.sub.neu, pseudotimeColName = "pseudotime.neu", 
+                      trajectoryName = "Neuronal trajectory")
+
+visualizeTFTrajectory(TF = TF, 
+                      obj = seu.sub.meso, pseudotimeColName = "pseudotime.meso", 
+                      trajectoryName = "Mesoderm trajectory")
+
+visualizeTFTrajectory(TF = TF, 
+                      obj = seu.sub.und, pseudotimeColName = "pseudotime.und", 
+                      trajectoryName = "Unknown trajectory")
+```
+
+**Try this with a few other TFs, which TFs give very different or very clear TF trajectories? Play around and identify candidate TFs that seem to be differential among the three classes we subset here.**
+
+
+## Pseudotime TF heatmap based on TF activities
+
+We can also create a pseudotime TF heatmap based on TF activity scores for each sub trajectory. We again first create a custom function that we can call multiple times afterwards:
+
+```{r createHeatmap}
+
+createHeatmap <- function(obj, pseudotimeColName, title = "Trajectory", topTFs = 100) {
+  
+  # Code taken and adjusted from here: https://github.com/crickbabs/ZebrafishDevelopingHindbrainAtlas
+  
+  TFdata = obj@assays$chromvar@data
+  # take X most variable TFs 
+  TFdata.f = head(TFdata[order(rowSds(TFdata), decreasing = TRUE),], topTFs)
+  
+  # TF normalization
+  pseudotimeData = obj@meta.data[pseudotimeColName] 
+  # Fix to the same name here for easier code
+  colnames(pseudotimeData) = "pseudotime"
+  
+  pseudotimeData = pseudotimeData %>% rownames_to_column("cellID") %>% arrange(pseudotime)
+  pt.matrix <- TFdata.f[, pseudotimeData$cellID]
+  pt.matrix <- t(apply(pt.matrix,1,function(x){smooth.spline(x,df=3)$y}))
+  pt.matrix <- t(apply(pt.matrix,1,function(x){(x-mean(x))/sd(x)}))
+  
+  # rownames(pt.matrix) <- genes;
+  
+  ht <- Heatmap(
+    pt.matrix, 
+    column_title                 = paste0(title, ": top ", topTFs, " variable TFs"),
+    name                         = "z-score",
+    col                          = colorRamp2(seq(from=-2,to=2,length=11),rev(brewer.pal(11, "Spectral"))),
+    show_row_names               = TRUE,
+    show_column_names            = FALSE,
+    row_names_gp                 = gpar(fontsize = 5),
+    # km = 6, if cluster_rows = TRUE
+    row_title_rot                = 0,
+    cluster_rows                 = TRUE, # TRUE 
+    cluster_row_slices           = FALSE,
+    cluster_columns              = FALSE)
+  
+  print(ht)
+
+
+}
+
+```
+
+Similar to before, we can now plot the pseudotime TF heatmap for each of the three cell clusters:
+
+```{r plotHeatmaps, fig.height = 8}
+
+createHeatmap(obj = seu.sub.neu, pseudotimeColName = "pseudotime.neu", title = "Neuronal trajectory", topTFs = 100)
+
+createHeatmap(obj = seu.sub.meso, pseudotimeColName = "pseudotime.meso", title = "Mesoderm trajectory", topTFs = 100)
+
+createHeatmap(obj = seu.sub.und, pseudotimeColName = "pseudotime.und", title = "Unknown trajectory", topTFs = 100)
+
+```
+
+
+This concludes the vignette, and from here, you can continue exploring the data, connecting different assays and data together, and make sense out of the data and explore new biology!
+
+## Save object to disk
+
+We reached the end of the vignette. We again save our updated `Seurat` object to disk with a new name, in analogy to what we did in the other vignettes.
+
+```{r saveObject}
+saveRDS(seu.s, file = paste0(outFolder,"obj.filt.monocle.rds"))
+```
+
+## Further reading
+
+[Pliner, H.A., Packer, J.S., McFaline-Figueroa, J.L., Cusanovich, D.A., Daza, R.M., Aghamirzaie, D., Srivatsan, S., Qiu, X., Jackson, D., Minkina, A. and Adey, A.C., 2018. Cicero predicts cis-regulatory DNA interactions from single-cell chromatin accessibility data. Molecular cell, 71(5), pp.858-871.](https://www.sciencedirect.com/science/article/pii/S1097276518305471)
+
+## Session info
+
+It is good practice to print the so-called session info at the end of an
+R script, which prints all loaded libraries, their versions etc. This
+can be helpful for reproducibility and recapitulating which package
+versions have been used to produce the results obtained above.
+
+```{r sessionInfo}
+sessionInfo()
+```
+

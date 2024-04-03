@@ -16,14 +16,13 @@
 -   [x] [Christian Arnold: Bioinformatic Workflow Managers: Snakemake](presentations/Snakemake_Christian.pdf)
 -   [x] [Christian Arnold: Cell Ranger ATAC Introduction and QC](presentations/CellRanger.pdf)
 -   [x] [Ivan Berest: Overview of single-cell ATAC computational tools](presentations/ATAC2022_IvanBerest.pdf)
--   [x] [Daria Bunina: Discovering new insights about cell differentiation using ATAC-seq and multi-omic data integration](presentations/ATACcourseTalk2022_Daria.pptx)
 
 ## Protocols
 
 -   [x] [single-cell ATAC-seq](protocols/Single%20Cell%20ATAC-seq%20Protocol)
 -   [x] [bulk ATAC-seq](protocols/Bulk%20ATAC-seq%20protocol_not_covered_in%20the_course)
 
-## Data and Results
+## Data and Results (LINKS NOT YET WORKING)
 
 -   Raw sequencing data, per sample (time-limited download)
     -   [x] [Sample 1](https://www.embl.de/download/zaugg/atac2024/raw/lane1g1.tar)

@@ -1,0 +1,346 @@
+---
+title: "Peak co-accessibility - Cicero"
+author: "Ivan Berest and Christian Arnold"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+execute:
+  warning: false
+format: 
+  html:
+    theme: lumen
+    max-width: 2000px
+    code-fold: true
+    code-summary: "Show the code"
+    self-contained: true
+    toc: true
+    toc-location: right
+    smooth-scroll: true
+---
+
+## Goals
+
+This vignette will introduce you to `Cicero`, an R package that provides
+tools for analyzing single-cell chromatin accessibility experiments such
+as scATAC-seq data. Its main function is to use single-cell chromatin
+accessibility data to predict cis-regulatory interactions (such as those
+between enhancers and promoters) in the genome by examining
+co-accessibility. In addition, we will touch upon constructing
+trajectories with accessibility data and differential accessibility
+analyses.
+
+## References
+
+This vignette is a modified version of [this
+vignette](https://satijalab.org/signac/1.2.0/articles/cicero.html), [this](https://www.bioconductor.org/packages/devel/bioc/vignettes/cicero/inst/doc/website.html) and
+[this
+vignette](https://cole-trapnell-lab.github.io/cicero-release/docs_m3).
+
+## Load libraries
+
+As before, we first load all necessary R packages that are needed for
+this vignette.
+
+```{r lib}
+
+suppressPackageStartupMessages({
+library(Signac)
+library(Seurat)
+library(SeuratWrappers)
+library(monocle3)
+library(tidyverse)
+library(patchwork)
+library(cicero)
+})
+set.seed(1990)
+```
+
+## Load data
+
+We begin by loading our pre-processed `Seurat` object from the
+introductory QC vignette into R. This code is shared among all
+subsequent vignettes.
+
+```{r loadData}
+# Specify the path to the "outs" folder from cellranger-atac here 
+# Make sure to have a trailing slash here
+outFolder =" /mnt/data/cellranger/outs/"
+outFolder = "/g/zaugg/zaugg_shared/Courses_and_Teaching/ATAC-Seq_Course/2024/testdata/test_lifminus/outs/"
+seu.s = readRDS(file = paste0(outFolder,"obj.filt.rds"))
+
+# Let's make sure we are working with correct clusters
+Idents(seu.s)  = seu.s$ATAC_snn_res.0.5
+DefaultAssay(seu.s) = "ATAC"
+
+```
+
+## Predict cis-regulatory interactions
+
+`Cicero` is an R package that provides tools for analyzing single-cell
+chromatin accessibility experiments such as scATAC-seq data. Its main
+function is to use single-cell chromatin accessibility data to predict
+cis-regulatory interactions (such as those between enhancers and
+promoters) in the genome by examining co-accessibility.
+
+Let's now try to find cis-co-accessible networks (CCANs)! As always, we
+need some pre-processing first.
+
+### Convert objects
+
+The `Cicero` developers have developed a separate branch of the package
+that works with a Monocle 3 `cell_data_set` object.
+
+```{r makeObject}
+
+cds.obj <- as.cell_data_set(seu.s)
+
+# takes a few minutes
+cicero.obj <- make_cicero_cds(cds.obj, reduced_coordinates = reducedDims(cds.obj)$UMAP)
+
+rm(cds.obj)
+```
+
+The warning we get we can safely ignore here, as we do not run `Monocle`
+trajectories here in this vignette. But, as always: try to understand the significance and relevance of each warning. They are usually printed for a good reason!
+
+### Parameters
+
+The default parameters were designed for use in human and mouse.
+Importantly, there are a few parameters that we expect will need to be
+changed for use in different model organisms. For more details, see
+[here](https://cole-trapnell-lab.github.io/cicero-release/docs_m3/).
+Since we have mouse data, there is no immediate need to change any of
+the parameters at first, but as always, upon inspection of the results,
+we may want to tweak some parameters to obtain better results! First,
+let's run it with the default parameters, however.
+
+### Find Cicero connections
+
+Here we demonstrate the most basic workflow for running `Cicero`. Its
+main function is to estimate the co-accessiblity of sites in the genome
+in order to predict cis-regulatory interactions. There are two ways to
+get this information:
+
+-   `run_cicero`: get Cicero outputs with all defaults The function
+    `run_cicero` will call each of the relevant pieces of `Cicero` code
+    using default values, and calculating best-estimate parameters as it
+    goes. For most users, this will be the best place to start, and this
+    is also our first approach.
+-   Call functions separately for users wanting more flexibility in the
+    parameters that are called, and those that want access to
+    intermediate information.
+
+As you can see, the workflow can be broken down into several steps, each
+with parameters that can be changed from their defaults to fine-tune the
+`Cicero` algorithm depending on your data (if needed). As with all
+tools, we highly recommend that you explore the `Cicero` website, paper,
+and documentation for more information (see the last section for more
+references).
+
+Here, for the purpose of this vignette, in order to achieve shorter
+running times, we here employ 2 tricks:
+
+-   Running this not for the full genome but only one (part of a)
+    chromosome (*chr19*, one of the smallest mouse chromosomes, and only
+    10 million bases)
+
+-   Reduce the number of samples from 100 to a smaller value
+
+```{r runCicero}
+# How many sample genomic windows to use to generate distance_parameter parameter. Default: 100.
+# Normally set to 100, here smaller so it runs faster - set to a higher value if possible
+sampleNum = 20
+
+# get the chromosome sizes from the Seurat object
+genome <- seqlengths(seu.s)
+
+# use smallest mouse chromosome 19 to save some time
+# omit this step to run on the whole genome
+genome <- genome["chr19"]
+
+# convert chromosome sizes to a data frame. 
+# Here we set the chromosome size to a small value and not even the full chromosome
+# Set length to genome to run it for the full chromosome
+genome.df <- data.frame("chr" = names(genome), "length" = 10000000)
+
+# Run cicero. This may take a lot of time
+conns <- run_cicero(cicero.obj, genomic_coords = genome.df, sample_num = sampleNum)
+
+rm(cicero.obj)
+
+# Let's look into the results, sort by co-accesibility first
+arrange(conns, desc(coaccess)) %>% head(10)
+```
+
+If the time allows, the same workflow should be applied to find *CCANs*
+for the whole genome by not restricting the chromosome as we did above.
+
+### Find cis-co-accessible networks (CCANs)
+
+In addition to pairwise co-accessibility scores, Cicero also has a
+function to find *Cis-Co-accessibility Networks* (CCANs), which are
+modules of sites that are highly co-accessible with one another. We use
+the *Louvain community detection algorithm* ([Blondel et al.,
+2008](https://arxiv.org/abs/0803.0476)) to find clusters of sites that
+tended to be co-accessible. The function `generate_ccans` takes as input
+a connection data frame and outputs a data frame with CCAN assignments
+for each input peak. Sites not included in the output data frame were
+not assigned a CCAN.
+
+Now that we have found pairwise co-accessibility scores for each peak,
+let's group these pairwise connections into larger co-accessible
+networks!
+
+```{r ccans}
+# generate co-accessibility networks
+ccans <- generate_ccans(conns)
+
+# Let's look into the results
+ccans[1:20,]
+```
+
+### Add links to a Seurat object
+
+We can add the co-accessible links found by `Cicero` to the
+`ChromatinAssay` object in `Seurat`. Using the `ConnectionsToLinks()`
+function in `Signac` we can convert the outputs of `Cicero` to the
+format needed to store in the links slot in the `ChromatinAssay`, and
+add this to the object using the `Links<-` assignment function.
+
+```{r addLinks}
+# transform to the links
+links <- ConnectionsToLinks(conns = conns, ccans = ccans)
+Links(seu.s) <- links
+```
+
+### Visualize links
+
+We can now visualize these links along with DNA accessibility
+information by running `CoveragePlot()` for one particular, customizable
+region:
+
+```{r visualizeLinks1}
+# coverage plot for the specific region
+region = "chr19-10022739-10023655"
+
+# in principle here we can also show links network close to some interesting gene on chr19
+CoveragePlot(seu.s, region = region, extend.upstream = 10000, extend.downstream = 10000)
+```
+
+The `Cicero` package also includes a general plotting function for
+visualizing co-accessibility called `plot_connections`. This function
+uses the `Gviz` framework for plotting genome browser-style plots. The
+authors adapted a function from the `Sushi` R package for mapping
+connections. `plot_connections` has many options, but to get a basic
+plot from your co-accessibility table is quite simple.
+
+Here, we will include optional `gene_model` data so that genes can be
+plotted as well.
+
+```{r visualizeLinks2}
+
+# Construct a data frame to provide a gene annotation
+
+geneAnno = data.frame(chromosome = seqnames(Annotation(seu.s)) %>% as.factor(), 
+                      start = start(Annotation(seu.s)), end = end(Annotation(seu.s)),
+                      gene = mcols(Annotation(seu.s))$gene_id,
+                      strand = strand(Annotation(seu.s)),
+                      symbol = mcols(Annotation(seu.s))$gene_name,
+                      transcript = mcols(Annotation(seu.s))$tx_id
+                      ) %>%
+    group_by(transcript) %>% # we have to group transcript IDs here because they may appear multiple times
+    slice_head(n = 1) %>% 
+    ungroup()
+
+plot_connections(conns, "chr19", 7000000, 8000000,
+                 gene_model = geneAnno, 
+                 coaccess_cutoff = .25, 
+                 connection_width = .5, 
+                 collapseTranscripts = "longest" )
+```
+
+## Single-cell accessibility trajectories
+
+The second major function of the `Cicero` package is to extend
+`Monocle 3` for use with single-cell accessibility data for clustering, ordering, and
+differential accessibility analysis of single cells. The main
+obstacle to overcome with chromatin accessibility data is the sparsity,
+so most of the extensions and methods are designed to address that.
+
+
+### Constructing trajectories with accessibility data
+
+For constructing the trajectories, as you have learned in the
+`Monocle 3` vignette, the workflow is generally as follows:
+
+1.  Preprocess the data
+
+2.  Reduce the dimensionality of the data
+
+3.  Cluster the cells
+
+4.  Learn the trajectory graph
+
+5.  Order the cells in pseudotime
+
+The main `Monocle 3` workflow as described in the `Monocle 3` vignette
+can be used here, and is therefore not covered in this `Cicero` specific
+vignette. However, scATAC-seq specific functions that `Cicero` provides
+will now be mentioned. **We leave it as an exercise to the curious to
+perform them!**
+
+### Differential Accessibility Analysis
+
+The primary way that the `Cicero` package deals with the sparsity of
+single-cell chromatin accessibility data is through aggregation.
+Aggregating the counts of either single cells or single peaks allows us
+to produce a "consensus" count matrix, reducing noise and allowing us to
+move out of the binary regime. Under this grouping, the number of cells
+in which a particular site is accessible can be modeled with a binomial
+distribution or, for sufficiently large groups, the corresponding
+Gaussian approximation. Modeling grouped accessibility counts as
+normally distributed allows `Cicero` to easily adjust them for arbitrary
+technical covariates by simply fitting a linear model and taking the
+residuals with respect to it as the adjusted accessibility score for
+each group of cells. We demonstrate how to apply this grouping
+practically below.
+
+Once you have your cells ordered in pseudotime, you can ask where in the
+genome chromatin accessibility is changing across time. If you know of
+specific sites that are important to your system, you may want to
+visualize the accessibility at those sites across pseudotime using the
+function `plot_accessibility_in_pseudotime`.
+
+The package also provides the function `aggregate_by_cell_bin` for
+site-level statistic (whether a site is changing in pseudotime), which
+works by aggregating similar cells. For more information and examples,
+see
+[here](https://cole-trapnell-lab.github.io/cicero-release/docs_m3/#single-cell-accessibility-trajectories).
+
+## Save object to disk
+
+We reached the end of the vignette. We again save our updated `Seurat`
+object to disk with a new name, in analogy to what we did in the other
+vignettes.
+
+```{r saveObject}
+saveRDS(seu.s, file = paste0(outFolder,"obj.filt.cicero.rds"))
+```
+
+## Further reading
+
+[Pliner, H.A., Packer, J.S., McFaline-Figueroa, J.L., Cusanovich, D.A.,
+Daza, R.M., Aghamirzaie, D., Srivatsan, S., Qiu, X., Jackson, D.,
+Minkina, A. and Adey, A.C., 2018. Cicero predicts cis-regulatory DNA
+interactions from single-cell chromatin accessibility data. Molecular
+cell, 71(5),
+pp.858-871.](https://www.sciencedirect.com/science/article/pii/S1097276518305471)
+
+## Session info
+
+It is good practice to print the so-called session info at the end of an
+R script, which prints all loaded libraries, their versions etc. This
+can be helpful for reproducibility and recapitulating which package
+versions have been used to produce the results obtained above.
+
+```{r sessionInfo}
+sessionInfo()
+```

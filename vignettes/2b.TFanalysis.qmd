@@ -1,0 +1,623 @@
+---
+title: "TF activity, TF footprints and TF enrichment"
+author: "Ivan Berest and Christian Arnold"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+execute:
+  warning: false
+format: 
+  html:
+    theme: lumen
+    max-width: 2000px
+    code-fold: true
+    code-summary: "Show the code"
+    self-contained: true
+    toc: true
+    toc-location: right
+    smooth-scroll: true
+---
+
+## Goals
+
+This vignette will teach you all about TFs and motiv enrichment analyses
+for your scATAC data! For example, you will perform DNA sequence motif
+analysis in Signac. For this, you will explore two complementary options
+for performing motif analysis: one by finding overrepresented motifs in
+a set of differentially accessible peaks, one method performing
+differential motif activity analysis between groups of cells.
+
+## References
+
+This vignette is a modified version of [this
+vignette](https://satijalab.org/signac/articles/pbmc_vignette.html).
+
+## Load libraries
+
+As before, we first load all necessary R packages that are needed for
+this vignette.
+
+```{r lib}
+
+suppressPackageStartupMessages({
+library(Signac)
+library(Seurat)
+library(tidyverse)
+library(patchwork)
+library(chromVAR)
+library(TFBSTools)
+library(universalmotif)
+library(motifmatchr)
+library(BSgenome.Mmusculus.UCSC.mm10)
+library(BiocParallel)
+library(ggseqlogo)
+library(jsonlite)
+})
+set.seed(1990)
+```
+
+## Load data
+
+We begin by loading our pre-processed `Seurat` object from the introductory QC vignette into R. This code is shared among all subsequent vignettes.
+
+```{r loadData}
+# Specify the path to the "outs" folder from cellranger-atac here 
+# Make sure to have a trailing slash here
+outFolder="/mnt/data/cellranger/outs/"
+outFolder="/g/zaugg/zaugg_shared/Courses_and_Teaching/ATAC-Seq_Course/2024/testdata/test_lifminus/outs/"
+seu.s = readRDS(file = paste0(outFolder,"obj.filt.rds"))
+
+# Make sure we have the ATAC array in the object
+seu.s[["ATAC"]]
+
+# In case the object contains multiple assays, make the ATAC assay the standard
+DefaultAssay(seu.s) = "ATAC"
+```
+
+## Using a TF motif database and importing it into `Seurat`
+
+For motif analyses, a TF motif database is needed. Here, users have many choices such as *JASPAR*, *HOCOMOCO*,   [*CIS-BP*](http://cisbp.ccbr.utoronto.ca/), *TRANSFAC*, [*SwissRegulon*](https://swissregulon.unibas.ch/sr/), or *UniProbe*.
+
+### The *HOCOMOCO* database 
+
+[*HOCOMOCO*](https://academic.oup.com/nar/article/46/D1/D252/4616875) is one of the major resources for sequence analysis of transcriptional regulation in mammals and a popular choice for DNA binding specificities for human and mouse transcription factors, and version 11 contains binding models for 453 mouse and 680 human transcription factors and includes 1302 mononucleotide and 576 dinucleotide position weight matrices, which describe primary binding preferences of each transcription factor and reliable alternative binding specificities.
+
+In order to show you the power and flexibility of R as well as because we have good eperience with *HOCOMOCO*, we decided to choose this database for this vignette. 
+
+Generally speaking, importing the *HOCOMOCO* database into R would be easy if a designated *HOCOMOCO* package for R already
+existed (such as for *JASPAR* database), but unfortunately, this is not the case to the best of our
+knowledge. But with the power and flexibility of R, with a few lines of
+code, we can download the full *HOCOMOCO* database and all *PWM* motifs
+and import it into R without having to go to the terminal at all!
+Welcome to the world of bioinformatics! By not manually doing these
+tasks, we also eliminate many possible sources of error, and make this
+step as reproducible as possible.
+
+
+### Preparation
+
+As noted above, the following part is a bit involved and custom. 
+We have a few tasks ahead of us: downloading, pre-processing, converting and overlapping motif
+locations with our peaks, and finally adding the motif annotation to our
+`Seurat` object. Let's do it step for step.
+
+We will first download the newest *HOCOMOCO* v12 *PWM* database (which includes many files), overlap this with the mouse-specific motifs, and then convert the downloaded *PWM* matrices to proper motif objects in R. *PWM* stands for *Position Weight Matrix* and describes the probability to find the respective nucleotides
+A,C,G,T on each position of a motif. Thus, because motifs have different
+lengths, each TF *PWM* file has a different number of rows (one for each
+motif site) but always 4 columns (A, C, G, T).
+
+For reasons of reproducibility (and laziness, as every good bioinformatician), we identify mouse motifs automatically using a 
+
+
+```{r prepareHOCOMOCO_motifs}
+# prepare motifs HOCOMOCO
+file_motifs_rds = paste0(outFolder,"HOCO12_INVIVO_MOUSE.pfmlist.rds")
+
+if (file.exists(file_motifs_rds)) {
+  motifsProcessed <- readRDS(file_motifs_rds)
+} else {
+  
+  motifs_url =  "https://hocomoco12.autosome.org/final_bundle/hocomoco12/H12INVIVO/H12INVIVO_pwm.tar.gz"
+  file_downloadLocation =  paste0(outFolder, "H12INVIVO_pwm.tar.gz")
+  
+  download.file(motifs_url, destfile= file_downloadLocation)
+  
+  # First, just check contents without extracting
+  head(untar(file_downloadLocation,list = TRUE))
+  
+  # Time to extract the files
+  untar(file_downloadLocation, exdir = outFolder, verbose = TRUE)
+ 
+  # for file in pwm/*pwm; do echo "" >> "$file"; done
+  pathToPWMs = paste0(outFolder, "pwm")
+  
+  # We can now automatically save all file names into a vector and process it in R directly
+  pwmfiles = list.files(pathToPWMs, full.names = TRUE)
+
+  # Select only mouse ones 
+  anno_url =  "https://hocomoco12.autosome.org/final_bundle/hocomoco12/H12INVIVO/H12INVIVO-MOUSE_annotation.jsonl"
+  anno_downloadLocation =  paste0(outFolder, "H12INVIVO_MOUSE_annotation.jsonl")
+  download.file(anno_url, destfile= anno_downloadLocation)
+  TF.anno <-  bind_rows(lapply(lapply(readLines(anno_downloadLocation), fromJSON), unlist)) 
+  pwmfiles.f = pwmfiles[pwmfiles %in% paste0(paste0(outFolder, "pwm/"),TF.anno %>% pull(name),".pwm")]
+
+  
+  motif.list <- vector("list", length(pwmfiles.f))
+
+  i = 1 # Counter
+  for (fileCurrent in pwmfiles.f) {
+    # We now read in the PWM file and create a universalmotif object out of it
+    # We here suppress warnings that are not relevant for us for improved output
+    motivCur = suppressWarnings(universalmotif::read_matrix(fileCurrent, headers = ">", sep = "", positions = "rows"))
+    
+    # We now have to convert the current class universalmotif to class "TFBSTools-PFMatrix
+  # We here suppress notes that are not relevant for us for improved output
+    motivConverted = suppressMessages(convert_motifs(motivCur, class = "TFBSTools-PFMatrix"))
+    
+    # Save it in our list
+    motif.list[[i]] = motivConverted
+    
+    # Increase our list counter
+    i = i + 1
+  }
+  
+  # We now have a populated list of all motif objects and are almost done.
+  
+  # We now set proper names for the list, which we simply take from the parsed files
+  names(motif.list) = str_remove(basename(pwmfiles.f),".pwm")
+  
+  # Finally, we can convert it to a PFMatrixList object
+  motifsProcessed <- do.call(PFMatrixList, motif.list)
+  
+  saveRDS(motifsProcessed, file = file_motifs_rds)
+}
+```
+
+
+Next, we need to do another step before we finished the motif
+integration. We now have to scan the DNA sequence of each peak for the
+presence of each motif and create a motif x feature matrix from a set of
+genomic ranges. his sounds complicated but can done with the help of
+just one function!
+
+The following chunk takes a few minutes to compute, and we therefore
+save the results to an `rds` file in the same way as we stored the
+`Seurat` object into an `rds`file - this allows us to compute the motif
+matrix only once and load it quickly thereafter, as opposed to computing
+it every time we run this vignette.
+
+```{r prepareMotifs2}
+
+ # Define a new file name that we try to load into R directly if it exists. If not, we create it
+ motif.matrix_name = paste0(outFolder,"motifmatrix.mouse.rds")
+ 
+ if (file.exists(motif.matrix_name)) {
+     
+   motif.matrix = readRDS(file  = motif.matrix_name)
+   
+ } else {
+   
+    # Let's create it once
+    # Exercise. What does use.counts do?
+    motif.matrix <- CreateMotifMatrix(
+      features = granges(seu.s[["ATAC"]]),
+      pwm = motifsProcessed, genome = 'mm10',
+      use.counts = FALSE
+    )
+    colnames(motif.matrix) = TFBSTools::name(motifsProcessed)
+    
+    # Save it, so next time we can directly read it into R
+    saveRDS(motif.matrix, file  = motif.matrix_name)
+
+ }
+
+
+```
+
+### Add to Seurat object
+
+Finally, we have all the required components together and we can create
+a `Motif` object and add it to our `Seurat` object, similar to what we
+did before with the *annotations*.
+
+```{r addMotifsToSeurat}
+# Create a new Motif object to store the results
+motifsFinal <- CreateMotifObject(data = motif.matrix, pwm = motifsProcessed)
+
+# Let's print the object summary
+motifsFinal 
+
+# Add it to our Seurat object
+Motifs(seu.s[["ATAC"]]) <- motifsFinal 
+```
+
+## Motif analysis option 1: `chromVAR`
+
+We can compute a per-cell motif activity score by running an approach
+called [chromVAR](https://greenleaflab.github.io/chromVAR/index.html),
+which identifies motifs associated with variability in chromatin
+accessibility between cells. This can identify differentially-active
+motifs between cell types. For more details, see the corresponding
+[paper](https://www.nature.com/articles/nmeth.4401).
+
+Identifying motif activities or TF motif enrichments can help us predict
+which regulatory factors are most active in our cell type of interest.
+Using `chromVAR`, we can predict enrichment of TF activity on a per-cell
+basis from sparse chromatin accessibility data. Its two primary outputs
+of are:
+
+-   *deviations* - A deviation is a bias-corrected measurement of how
+    far the per-cell accessibility of a given feature (i.e motif)
+    deviates from the expected accessibility based on the average of all
+    cells or samples.
+-   *deviation score* - The z-score for each bias-corrected deviation
+    across all cells. The absolute value of the deviation score is
+    correlated with the per-cell read depth. This is because, with more
+    reads, you have higher confidence that the difference in per-cell
+    accessibility of the given feature (i.e. motif) from the expectation
+    is greater than would occur by chance.
+
+For proper calculation of the deviations scores and the underlying
+statistics, one also needs a set of background peaks, which are chosen
+using the `chromVAR::getBackgroundPeaks()` function which samples peaks
+based on similarity in GC-content and number of fragments across all
+samples using the *Mahalanobis* distance. Here, it is called
+automatically when using the `RunChromVAR` wrapper.
+
+Depending on the number of cores, the following code will run 10-30
+minutes or so, so please be patient.
+
+
+```{r runChromVAR}
+nCores = 6
+register(MulticoreParam(nCores, progressbar = TRUE))
+
+# Compute the GC content, region lengths, and dinucleotide base frequencies for regions in the assay and add to the feature metadata. This is needed for chromVAR to work
+# seu.s <- RegionStats(object = seu.s, genome = BSgenome.Mmusculus.UCSC.mm10)
+
+# Now we can run the chromVAR wrapper
+seu.s <- RunChromVAR(object = seu.s, genome = BSgenome.Mmusculus.UCSC.mm10)
+```
+
+This took a while but we finally have the `chromVAR` scores that serve
+as a proxy for *TF activity*. Let's check them out now!
+
+### Find all differentially active TFs
+
+First, we find all markers across all clusters based on the `chromVAR`
+scores given the identity of cells as defined previously using the
+dimensionality reduction methods we employed.
+
+```{r findAllMarkers}
+DefaultAssay(seu.s) <- 'chromvar'
+Idents(seu.s) <- seu.s$ATAC_snn_res.0.5
+diffTF_all <- FindAllMarkers(seu.s, only.pos = TRUE, min.pct = 0.25, 
+                            logfc.threshold = 0.5, mean.fxn = rowMeans, fc.name = "avg_diff", verbose = FALSE)
+
+```
+
+### Visualise TFs per cluster
+
+Time to visualize our results!
+
+```{r topMarkers}
+gr1 = diffTF_all %>%
+    group_by(cluster) %>%
+    slice_max(n = 3, order_by = avg_diff)
+gr1
+```
+
+```{r plots1, fig.height=8}
+
+for (cl in sort(unique(gr1$cluster))) {
+  
+    fts = gr1 %>% filter(cluster == cl) %>% pull(gene) 
+  
+    p1 = VlnPlot(seu.s, features = fts, slot = "data", log = TRUE, pt.size = 0.1, ) + 
+        ylab("TF activity level") & theme(plot.title = element_text(size = 7))
+    
+    p2 = FeaturePlot(seu.s, features = fts, 
+                     min.cutoff = 'q5',max.cutoff = 'q95',
+                     pt.size = 0.1, ncol = 3, reduction = "umap")  & theme(plot.title = element_text(size = 7))
+    
+    pall = p1 / p2 + plot_annotation(title = paste0("Cluster ",cl))
+    
+    # Let's not print the warnings about non-finite and missing values
+    suppressWarnings(print(pall))
+}
+
+```
+
+### Summary heatmap
+
+Let's again create a heatmap, similar to the heatmap for the gene
+activities, this time with the `chromVAR` values:
+
+```{r plotHeatmap, fig.height=8}
+diffTF_all_top10 <- diffTF_all %>%
+    group_by(cluster) %>%
+    top_n(n = 10, wt = avg_diff) 
+
+DoHeatmap(seu.s, features = diffTF_all_top10$gene, slot = "data") 
+```
+
+### Differentially accessible TFs between clusters
+
+Analysis of single-cell chromatin accessibility data generally allows us
+to detect often novel cell clusters, while how to interpret these
+clusters remains a big challenge. Let's try to understand the clusters
+better. For this, let's calculate now the differential TF activity
+between a pair of clusters based on `chromVAR` scores! Note that this is
+a different question from what we have done before: So far, we only
+identified cluster-specific TFs, while now, we would like to which TFs
+make two clusters different!
+
+Thus, instead of finding all TFs that are deemed differential among all
+clusters, we can also specifically find marker TFs or marker peaks that
+are differential only when comparing a particular set of clusters. Let's
+try this out! Instead of the function `FindAllMarkers`, we will use the
+function `FindMarkers`.
+
+Let's first calculate differential TF activity between cluster `1` as
+compare to cluster `0`.
+
+```{r findMarkers_chromVAR}
+
+# mean.fxn = 	Function to use for fold change or average difference calculation
+differential.activity <- FindMarkers(
+  object = seu.s,
+  ident.1 = '1', ident.2 = '0',
+  only.pos = TRUE, mean.fxn = rowMeans,
+  fc.name = "avg_diff", 
+  assay = 'chromvar',
+  verbose = FALSE)
+```
+
+Now that we identified a few TF that are differentially active between
+the two specified clusters, let's try to see what their *TF binding
+motifs* (TFBMs) look like. The consensus sequence of a TFBM is variable,
+and there are a number of possible bases at certain positions in the
+motif, whereas other positions have a fixed base. These are usually
+illustrated in sequence logo diagrams (see below), where the height of
+the letter represents how frequently that nucleotide is observed in that
+position.
+
+We here plot the first 5 TFBMs to peek into the data:
+
+```{r motifPlot_chromVAR}
+TFs = rownames(differential.activity) %>% head(5) %>% str_replace("-","_")
+MotifPlot(object = seu.s, motifs = TFs, assay = 'ATAC')
+```
+
+## Motif analysis option 2: Finding overrepresented motifs in peaks
+
+Alternatively, to identify potentially important cell-type-specific
+regulatory sequences, we can search for DNA motifs that are
+overrepresented in a set of peaks that are differentially accessible
+between cell types / clusters.
+
+### Marker peak identification
+
+To find them, we can perform a *differential accessibility* (DA) test.
+Here, we utilize a method called logistic regression for DA, as
+suggested by [Ntranos et al.
+2018](https://www.biorxiv.org/content/10.1101/258566v2) for scRNA-seq
+data, and add the total number of fragments as a latent variable to
+mitigate the effect of differential sequencing depth on the result. In
+addition, for sparse data such as scATAC-seq, it is often necessary to
+lower the `min.pct` threshold in `FindMarkers()` from the default (0.1,
+which was designed for scRNA-seq data).
+
+Note that we now have to use our original `ATAC` assay, and not the
+`chromVAR` assay as before!
+
+```{r findmarkersPeaks}
+
+# Now, we work again with the ATAC assay and not the chromVAR assay
+DefaultAssay(seu.s) = "ATAC"
+
+# min.pct: only test genes that are detected in a minimum fraction of min.pct cells in either of the two population
+da_peaks <- FindMarkers(
+  object = seu.s,ident.1 = '0',ident.2 = '1',
+  only.pos = TRUE, test.use = 'LR', min.pct = 0.05,
+  latent.vars = 'peak_region_fragments', 
+  verbose = FALSE)
+
+# get top differentially accessible peaks
+top.da.peak <- rownames(da_peaks[da_peaks$p_val < 0.005, ])
+```
+
+### Constructing a matched background
+
+We now have a set of differentially active peaks, but how can we judge
+whether they are statistically meaningful? For proper enrichment
+analyses and statistics, matching the set of background peaks is
+essential when finding enriched DNA sequence motifs. A good choice is
+usually to choose a set of peaks matched for GC content, but it can be
+sometimes be beneficial to further restrict the background peaks to
+those that are accessible in the groups of cells compared when finding
+differentially accessible peaks.
+
+The `AccessiblePeaks()` function can be used to find a set of peaks that
+are open in a subset of cells. We can use this function to first
+restrict the set of possible background peaks to those peaks that were
+open in the set of cells compared in `FindMarkers()`, and then create a
+GC-content-matched set of peaks from this larger set using
+`MatchRegionStats()`.
+
+```{r backgroundPeaks}
+# find open peaks
+open.peaks <- AccessiblePeaks(seu.s, idents = c("1", "0"))
+
+# match the overall GC content in the peak set
+
+# Calculate meta features for object
+seu.s <- RegionStats(object = seu.s, genome = BSgenome.Mmusculus.UCSC.mm10, assay = "ATAC")
+meta.feature <- GetAssayData(seu.s, assay = "ATAC", slot = "meta.features")
+
+peaks.matched <- MatchRegionStats(
+  meta.feature = meta.feature[open.peaks, ],
+  query.feature = meta.feature[top.da.peak, ],
+  n = 50000
+)
+```
+
+### Enrichment test
+We are now ready to perform a statistical test to quantify the
+probability of observing the motif at the given frequency by chance,
+comparing with a background set of peaks matched for GC content, by
+specifying a foreground and the previously calculated matched
+background:
+
+```{r FindEnrichedMotifs}
+# test enrichment
+enriched.motifs <- FindMotifs(
+  object = seu.s,
+  features = top.da.peak,
+  background = peaks.matched
+)
+
+# Let's check the results
+enriched.motifs
+```
+
+### Visualization
+We can also plot the position weight matrices for the motifs, so we can
+visualize the different motif sequences. it is finally the time to
+visualize our results!
+
+```{r motifPlot}
+TFs = str_replace(head(rownames(enriched.motifs)),"-","_")
+MotifPlot(object = seu.s,motifs = TFs,assay = 'ATAC')
+
+```
+
+We can also visualize these marker peaks on a violin plot, feature plot,
+dot plot, heat map, or any [visualization tool in
+Seurat](https://satijalab.org/seurat/v3.0/visualization_vignette.html).
+
+Finally, as an exercise, you can now repeat the same procedure; but this
+time, we identify peaks the other way around: Peaks that are more
+accessible in cluster 1 as compared to cluster 0
+
+## TF footprints
+
+Transcription factor (TF) footprinting allows for the prediction of the
+precise binding location of a TF at a particular locus. For both bulk
+and scATAC-Seq, this is because the DNA bases that are directly bound by
+the TF are actually protected from transposition while the DNA bases
+immediately adjacent to TF binding are accessible, thus leaving a
+footprint. This allows us to generate average ATAC-seq profiles around
+binding sites of particular TF (a *TF footprint*). The last task in this
+vignette is to generate some TF footprints!
+
+Ideally, TF footprinting is performed at a single site to determine the
+precise binding location of the TF. However, in practice, this requires
+very high sequencing depth, often much higher depth than what most users
+would obtain from either bulk or single-cell ATAC-seq. To get around
+this problem, we can combine Tn5 insertion locations across many
+instances of predicted TF binding. For example, we can take all peaks
+that harbor a CTCF motif and make an aggregate TF footprint for CTCF
+across the whole genome. The accuracy of this footprint relies on
+generating a reliable curated list of predicted binding sites for the TF
+of interest.
+
+### Adding motif information to the object
+
+To prepare this, we need to add the *HOCOMOCO* motifs to our object in a
+way that is compatible with the footprinting functions. Why we need to
+to this? Generally, to facilitate motif analysis in `Signac`, we have to
+create the `Motif` class to store all the required information,
+including a list of *position weight matrice*s (PWMs) or *position
+frequency matrices* (PFMs) and a motif occurrence matrix. Here, the
+`AddMotifs()` function construct a `Motif` object and adds it to our
+dataset, along with other information such as the base composition of
+each peak. Even more generally, a motif object can be added to any
+`Seurat`-compatible assay using the `SetAssayData()` function. The
+following chunk takes a few minutes to run, so please be patient.
+
+```{r addMotifToObject}
+DefaultAssay(seu.s) <- 'ATAC'
+seu.s <- AddMotifs(seu.s, genome = BSgenome.Mmusculus.UCSC.mm10, pfm = motifsProcessed)
+```
+
+Alternatively, if we used a different motif database such as `JASPAR`,
+we could add it to our object in a similar fashion:
+
+```{r JASPAR, eval = FALSE}
+library(JASPAR2022)
+# Potentially specifying the species is also needed here
+motifDB = getMatrixSet(JASPAR2022, opts = list(collection = "CORE", tax_group = 'vertebrates', all_versions = FALSE))
+)
+```
+
+### Footprint computation
+
+Now we can footprint any motif that we have positional information for.
+Here, we can run it just for a few selected TFs. The footprinting
+function computes the normalized observed vs. expected Tn5 insertion
+frequency for each position surrounding a set of motif instances. By
+default, this includes every instance of the motif in the genome. We can
+instead use the `in.peaks = TRUE` parameter to include only those motifs
+that fall inside a peak in the assay. The `Footprint()` function gathers
+all the required data and stores it in the assay.
+
+Again, this will take some minutes to run.
+
+```{r runFootprint}
+
+# Pre-selected TFs that should be more active for cluster 0 and 1. ERR3 + SOX2 should be more in ES cells (cluster 1) and TEAD4 + PITX1 in neuronal ones (cluster 0).
+TFs = c("ERR3_MOUSE.H11MO.0.C", "SOX2_MOUSE.H11MO.0.A", "TEAD4_MOUSE.H11MO.0.A","PITX1_MOUSE.H11MO.0.C")
+
+# gather the footprinting information for sets of motifs
+seu.s <- Footprint(
+  object = seu.s,
+  motif.name = TFs,
+  in.peaks = FALSE,
+  genome = BSgenome.Mmusculus.UCSC.mm10
+)
+```
+
+### Footprint visualization
+
+We can now plot the footprinted motifs using the `PlotFootprint()` function.
+
+```{r plotFootprint}
+
+TFs = c("ERR3_MOUSE.H11MO.0.C", "SOX2_MOUSE.H11MO.0.A", "TEAD4_MOUSE.H11MO.0.A","PITX1_MOUSE.H11MO.0.C")
+
+# Plot the footprint data for each group of cells and each cluster
+p2 <- PlotFootprint(seu.s, features = TFs[1:2])
+p2 + patchwork::plot_layout(ncol = 2) & theme(plot.title = element_text(size = 10))
+
+p3 <- PlotFootprint(seu.s, features = TFs[3:4])
+p3 + patchwork::plot_layout(ncol = 2) & theme(plot.title = element_text(size = 10))
+```
+
+This concludes the TF footprint analysis as part of this vignette!
+
+## Save object to disk
+
+We reached the end of the vignette. We again save our updated `Seurat` object to disk with a new name, in analogy to what we did in the other vignettes.
+
+```{r saveObject2}
+saveRDS(seu.s, file = paste0(outFolder,"obj.filt.TFAnalysis.rds"))
+```
+
+## Further reading
+
+[TF motif clustering: Motif archetypes](https://resources.altius.org/~jvierstra/projects/motif-clustering-v2.0beta/)
+
+[Motif archetypes discussion](https://github.com/GreenleafLab/ArchR/discussions/1386)
+
+
+[Kulakovskiy, I.V., Vorontsov, I.E., Yevshin, I.S., Sharipov, R.N., Fedorova, A.D., Rumynskiy, E.I., Medvedeva, Y.A., Magana-Mora, A., Bajic, V.B., Papatsenko, D.A. and Kolpakov, F.A., 2018. HOCOMOCO: towards a complete collection of transcription factor binding models for human and mouse via large-scale ChIP-Seq analysis. Nucleic acids research, 46(D1), pp.D252-D259.](https://academic.oup.com/nar/article/46/D1/D252/4616875?login=true)
+
+## Session info
+
+It is good practice to print the so-called session info at the end of an
+R script, which prints all loaded libraries, their versions etc. This
+can be helpful for reproducibility and recapitulating which package
+versions have been used to produce the results obtained above.
+
+```{r sessionInfo}
+sessionInfo()
+```
