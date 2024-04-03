@@ -56,8 +56,8 @@ We begin by loading our pre-processed `Seurat` object. In most vignettes, we too
 ```{r loadData}
 # Specify the path to the "outs" folder from cellranger-atac here 
 # Make sure to have a trailing slash here
-outFolder="/mnt/data/cellranger/outs/"
-outFolder="/g/zaugg/zaugg_shared/Courses_and_Teaching/ATAC-Seq_Course/2024/testdata/test_lifminus/outs/"
+outFolder = "/mnt/data/cellranger/outs/"
+outFolder = "/g/zaugg/zaugg_shared/Courses_and_Teaching/ATAC-Seq_Course/2024/testdata/test_lifminus/outs/"
 
 # This time, we load a different object at the beginning
 seu.s = readRDS(file = paste0(outFolder,"obj.filt.TFAnalysis.rds"))
@@ -119,7 +119,7 @@ plot_cells(cds = traj.cds, show_trajectory_graph = TRUE,
 
 #### Explore with `minimal_branch_len` 3 
 
-Let's repeat the same, but with a higher value for `minimal_branch_len`. If you want, create your own function that runs both `learn_graph` and `plot_cells` with `minimal_branch_len` as a paramter to avoid code redundancy!
+Let's repeat the same, but with a higher value for `minimal_branch_len`. If you want, create your own function that runs both `learn_graph` and `plot_cells` with `minimal_branch_len` as a parameter to avoid code redundancy!
 
 ```{r learnGraph2}
 traj.cds <- learn_graph(traj.cds, use_partition = TRUE, close_loop = FALSE, 
@@ -289,7 +289,7 @@ Now, we will try to visualize the TF activity that we derived before in the TF a
  
 ```{r visualizeTFTrajectoryFunction}
 
-visualizeTFTrajectory <- function (TF, obj, pseudotimeColName, trajectoryName, ylim = c(-5,7)) {
+visualizeTFTrajectory <- function(TF, obj, pseudotimeColName, trajectoryName, ylim = c(-5,7)) {
     
     df = tibble(pseudotime = obj@meta.data[[c(pseudotimeColName)]],
                 TF         = obj@assays$chromvar@data[TF,]) %>%
@@ -316,7 +316,7 @@ Nevertheless, let's try our new function for some TFs. We start with `PITX1-MOUS
 
 ```{r plotTFTrajectory}
 
-TF = "PITX1-MOUSE.H11MO.0.C"
+TF = "PITX1.H12INVIVO.0.PSM.A"
 
 visualizeTFTrajectory(TF = TF, 
                       obj = seu.sub.neu, pseudotimeColName = "pseudotime.neu", 

@@ -61,8 +61,8 @@ We begin by loading our pre-processed `Seurat` object from the introductory QC v
 ```{r loadData}
 # Specify the path to the "outs" folder from cellranger-atac here 
 # Make sure to have a trailing slash here
-outFolder="/mnt/data/cellranger/outs/"
-outFolder="/g/zaugg/zaugg_shared/Courses_and_Teaching/ATAC-Seq_Course/2024/testdata/test_lifminus/outs/"
+outFolder = "/mnt/data/cellranger/outs/"
+outFolder = "/g/zaugg/zaugg_shared/Courses_and_Teaching/ATAC-Seq_Course/2024/testdata/test_lifminus/outs/"
 seu.s = readRDS(file = paste0(outFolder,"obj.filt.rds"))
 
 # Make sure we have the ATAC array in the object
@@ -80,7 +80,7 @@ For motif analyses, a TF motif database is needed. Here, users have many choices
 
 [*HOCOMOCO*](https://academic.oup.com/nar/article/46/D1/D252/4616875) is one of the major resources for sequence analysis of transcriptional regulation in mammals and a popular choice for DNA binding specificities for human and mouse transcription factors, and version 11 contains binding models for 453 mouse and 680 human transcription factors and includes 1302 mononucleotide and 576 dinucleotide position weight matrices, which describe primary binding preferences of each transcription factor and reliable alternative binding specificities.
 
-In order to show you the power and flexibility of R as well as because we have good eperience with *HOCOMOCO*, we decided to choose this database for this vignette. 
+In order to show you the power and flexibility of R as well as because we have good experience with *HOCOMOCO*, we decided to choose this database for this vignette. 
 
 Generally speaking, importing the *HOCOMOCO* database into R would be easy if a designated *HOCOMOCO* package for R already
 existed (such as for *JASPAR* database), but unfortunately, this is not the case to the best of our
@@ -118,7 +118,7 @@ if (file.exists(file_motifs_rds)) {
   motifs_url =  "https://hocomoco12.autosome.org/final_bundle/hocomoco12/H12INVIVO/H12INVIVO_pwm.tar.gz"
   file_downloadLocation =  paste0(outFolder, "H12INVIVO_pwm.tar.gz")
   
-  download.file(motifs_url, destfile= file_downloadLocation)
+  download.file(motifs_url, destfile = file_downloadLocation)
   
   # First, just check contents without extracting
   head(untar(file_downloadLocation,list = TRUE))
@@ -135,7 +135,7 @@ if (file.exists(file_motifs_rds)) {
   # Select only mouse ones 
   anno_url =  "https://hocomoco12.autosome.org/final_bundle/hocomoco12/H12INVIVO/H12INVIVO-MOUSE_annotation.jsonl"
   anno_downloadLocation =  paste0(outFolder, "H12INVIVO_MOUSE_annotation.jsonl")
-  download.file(anno_url, destfile= anno_downloadLocation)
+  download.file(anno_url, destfile = anno_downloadLocation)
   TF.anno <-  bind_rows(lapply(lapply(readLines(anno_downloadLocation), fromJSON), unlist)) 
   pwmfiles.f = pwmfiles[pwmfiles %in% paste0(paste0(outFolder, "pwm/"),TF.anno %>% pull(name),".pwm")]
 
@@ -262,19 +262,18 @@ based on similarity in GC-content and number of fragments across all
 samples using the *Mahalanobis* distance. Here, it is called
 automatically when using the `RunChromVAR` wrapper.
 
-Depending on the number of cores, the following code will run 10-30
+Depending on the number of cores, the following code will run a few
 minutes or so, so please be patient.
 
 
 ```{r runChromVAR}
-nCores = 6
-register(MulticoreParam(nCores, progressbar = TRUE))
+register(SerialParam())
 
 # Compute the GC content, region lengths, and dinucleotide base frequencies for regions in the assay and add to the feature metadata. This is needed for chromVAR to work
 # seu.s <- RegionStats(object = seu.s, genome = BSgenome.Mmusculus.UCSC.mm10)
 
 # Now we can run the chromVAR wrapper
-seu.s <- RunChromVAR(object = seu.s, genome = BSgenome.Mmusculus.UCSC.mm10)
+seu.s <- RunChromVAR(object = seu.s, genome = BSgenome.Mmusculus.UCSC.mm10, verbose = TRUE)
 ```
 
 This took a while but we finally have the `chromVAR` scores that serve
@@ -309,9 +308,9 @@ gr1
 
 for (cl in sort(unique(gr1$cluster))) {
   
-    fts = gr1 %>% filter(cluster == cl) %>% pull(gene) 
+    fts = gr1 %>% filter(cluster == cl) %>% pull("gene") 
   
-    p1 = VlnPlot(seu.s, features = fts, slot = "data", log = TRUE, pt.size = 0.1, ) + 
+    p1 = VlnPlot(seu.s, features = fts, layer = "data", log = TRUE, pt.size = 0.1, ) + 
         ylab("TF activity level") & theme(plot.title = element_text(size = 7))
     
     p2 = FeaturePlot(seu.s, features = fts, 
@@ -476,7 +475,7 @@ enriched.motifs <- FindMotifs(
 )
 
 # Let's check the results
-enriched.motifs
+head(enriched.motifs)
 ```
 
 ### Visualization
@@ -564,16 +563,17 @@ Again, this will take some minutes to run.
 
 ```{r runFootprint}
 
-# Pre-selected TFs that should be more active for cluster 0 and 1. ERR3 + SOX2 should be more in ES cells (cluster 1) and TEAD4 + PITX1 in neuronal ones (cluster 0).
-TFs = c("ERR3_MOUSE.H11MO.0.C", "SOX2_MOUSE.H11MO.0.A", "TEAD4_MOUSE.H11MO.0.A","PITX1_MOUSE.H11MO.0.C")
+# Pre-selected TFs that should be more active for cluster 0 and 1. 
+# ERR3 + SOX2 should be more in ES cells (cluster 1) and TEAD4 + PITX1 in neuronal ones (cluster 0).
+TFs = c("ERR3.H12INVIVO.0.PSM.A", "SOX2.H12INVIVO.0.P.B", "TEAD4.H12INVIVO.0.PS.A", "PITX1.H12INVIVO.0.PSM.A")
 
 # gather the footprinting information for sets of motifs
-seu.s <- Footprint(
+seu.s <- suppressWarnings(Footprint(
   object = seu.s,
   motif.name = TFs,
   in.peaks = FALSE,
   genome = BSgenome.Mmusculus.UCSC.mm10
-)
+))
 ```
 
 ### Footprint visualization
@@ -581,8 +581,6 @@ seu.s <- Footprint(
 We can now plot the footprinted motifs using the `PlotFootprint()` function.
 
 ```{r plotFootprint}
-
-TFs = c("ERR3_MOUSE.H11MO.0.C", "SOX2_MOUSE.H11MO.0.A", "TEAD4_MOUSE.H11MO.0.A","PITX1_MOUSE.H11MO.0.C")
 
 # Plot the footprint data for each group of cells and each cluster
 p2 <- PlotFootprint(seu.s, features = TFs[1:2])
