@@ -146,6 +146,9 @@ seu <- CreateSeuratObject(
 # Set default array so we dont have to specify array = "ATAC" in subsequent steps
 DefaultAssay(seu) = "ATAC"
 
+# Subset to a smaller object (5k peaks, 1k cells) for testing purposes
+seu = seu[1:20000,1:1000]
+
 # Delete objects and variables we do not need anymore to save space
 rm(chrom_assay,peakCounts,metadata)
 
