@@ -308,7 +308,7 @@ gr1
 
 for (cl in sort(unique(gr1$cluster))) {
   
-    fts = gr1 %>% filter(cluster == cl) %>% pull("gene") 
+    fts = gr1 %>% dplyr::filter(cluster == cl) %>% pull("gene") 
   
     p1 = VlnPlot(seu.s, features = fts, layer = "data", log = TRUE, pt.size = 0.1, ) + 
         ylab("TF activity level") & theme(plot.title = element_text(size = 7))

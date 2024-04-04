@@ -470,6 +470,13 @@ seu.s <- subset(
     ATAC_doublets == "singlet"
 )
 
+# For testing purposes, we are here subsetting the seurat object to 20k peaks and 5k cells.
+
+######################################################
+# Do NOT execute this line when you run the vignette #
+######################################################
+seu.s = seu.s[1:20000, 1:5000]
+
 seu.s
 ```
 

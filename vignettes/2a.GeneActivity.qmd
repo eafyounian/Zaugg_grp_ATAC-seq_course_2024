@@ -162,9 +162,9 @@ Now, let's visualize the top marker genes per cluster:
 for (cl in sort(unique(gr1$cluster))) {
   
     # get a list of all cluster-specific genes
-    fts = gr1 %>% filter(cluster == cl) %>% pull(gene)
+    fts = gr1 %>% dplyr::filter(cluster == cl) %>% pull(gene)
 
-    p1 = VlnPlot(seu.s, features = fts, slot = "counts", log = TRUE)
+    p1 = VlnPlot(seu.s, features = fts, layer = "counts", log = TRUE)
     p2 = FeaturePlot(seu.s, features = fts, max.cutoff = "q90", pt.size = 0.1, ncol = 3, reduction = "umap")
     
     # Construct the patchwork plot from both individual ones
@@ -202,7 +202,7 @@ topMarkers <- markersGA %>%
 # We now create a new list in which we store the cluster-specific annotation of marker genes
 celltypes.l = list()
 for (cluster.id in unique(top$cluster)){
-  celltypes.l[[cluster.id]] = clustermole_overlaps(genes = topMarkers %>% filter(cluster == cluster.id) %>% pull(gene), species = "mm") %>% filter(species == "Mouse")
+  celltypes.l[[cluster.id]] = clustermole_overlaps(genes = topMarkers %>%  dplyr::filter(cluster == cluster.id) %>% pull(gene), species = "mm") %>%  dplyr::filter(species == "Mouse")
 
 }
 # How does our list look like? let's check for clusters 0 and 1

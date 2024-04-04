@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 <meta name="author" content="Ivan Berest and Christian Arnold">
-<meta name="dcterms.date" content="2024-04-03">
+<meta name="dcterms.date" content="2024-04-04">
 
 <title>Importing the data into R and Signac+Seurat, initial QC and clustering</title>
 <style>
@@ -3081,7 +3081,7 @@ vertical-align: -.125em;
     <div>
     <div class="quarto-title-meta-heading">Published</div>
     <div class="quarto-title-meta-contents">
-      <p class="date">April 3, 2024</p>
+      <p class="date">April 4, 2024</p>
     </div>
   </div>
   
@@ -3097,7 +3097,7 @@ vertical-align: -.125em;
 </section>
 <section id="references" class="level2">
 <h2 class="anchored" data-anchor-id="references">References</h2>
-<p>This vignette is a modified version of <a href="https://satijalab.org/signac/articles/pbmc_vignette.html">this vignette</a>, with modified descriptions from <a href="https://www.archrproject.com/bookdown/dimensionality-reduction-with-archr.html">the ArchR website</a> as well as the <a href="https://cran.r-project.org/web/packages/clustree/vignettes/clustree.html">clustree vignette</a>.</p>
+<p>This vignette is a modified version of <a href="https://stuartlab.org/signac/articles/pbmc_vignette.html">this vignette</a>, with modified descriptions from <a href="https://www.archrproject.com/bookdown/dimensionality-reduction-with-archr.html">the ArchR website</a> as well as the <a href="https://cran.r-project.org/web/packages/clustree/vignettes/clustree.html">clustree vignette</a>.</p>
 </section>
 <section id="atac-seq-recap" class="level2">
 <h2 class="anchored" data-anchor-id="atac-seq-recap">ATAC-Seq recap</h2>
@@ -3506,7 +3506,14 @@ Active assay: ATAC (20000 features, 0 variable features)
 <span id="cb27-9"><a href="#cb27-9"></a>    ATAC_doublets <span class="sc">==</span> <span class="st">&quot;singlet&quot;</span></span>
 <span id="cb27-10"><a href="#cb27-10"></a>)</span>
 <span id="cb27-11"><a href="#cb27-11"></a></span>
-<span id="cb27-12"><a href="#cb27-12"></a>seu.s</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb27-12"><a href="#cb27-12"></a><span class="co"># For testing purposes, we are here subsetting the seurat object to 20k peaks and 5k cells.</span></span>
+<span id="cb27-13"><a href="#cb27-13"></a></span>
+<span id="cb27-14"><a href="#cb27-14"></a><span class="do">######################################################</span></span>
+<span id="cb27-15"><a href="#cb27-15"></a><span class="co"># Do NOT execute this line when you run the vignette #</span></span>
+<span id="cb27-16"><a href="#cb27-16"></a><span class="do">######################################################</span></span>
+<span id="cb27-17"><a href="#cb27-17"></a>seu.s <span class="ot">=</span> seu.s[<span class="dv">1</span><span class="sc">:</span><span class="dv">20000</span>, <span class="dv">1</span><span class="sc">:</span><span class="dv">5000</span>]</span>
+<span id="cb27-18"><a href="#cb27-18"></a></span>
+<span id="cb27-19"><a href="#cb27-19"></a>seu.s</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output cell-output-stdout">
 <pre><code>An object of class Seurat 
@@ -4163,7 +4170,7 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
 <span id="cb41-28"><a href="#cb41-28"></a><span class="fu">## References</span></span>
 <span id="cb41-29"><a href="#cb41-29"></a></span>
 <span id="cb41-30"><a href="#cb41-30"></a>This vignette is a modified version of [this</span>
-<span id="cb41-31"><a href="#cb41-31"></a>vignette](https://satijalab.org/signac/articles/pbmc_vignette.html),</span>
+<span id="cb41-31"><a href="#cb41-31"></a>vignette](https://stuartlab.org/signac/articles/pbmc_vignette.html),</span>
 <span id="cb41-32"><a href="#cb41-32"></a>with modified descriptions from [the ArchR</span>
 <span id="cb41-33"><a href="#cb41-33"></a>website](https://www.archrproject.com/bookdown/dimensionality-reduction-with-archr.html) as well as the <span class="co">[</span><span class="ot">clustree vignette</span><span class="co">](https://cran.r-project.org/web/packages/clustree/vignettes/clustree.html)</span>.</span>
 <span id="cb41-34"><a href="#cb41-34"></a></span>
@@ -4605,337 +4612,344 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
 <span id="cb41-470"><a href="#cb41-470"></a>    ATAC_doublets <span class="sc">==</span> <span class="st">&quot;singlet&quot;</span></span>
 <span id="cb41-471"><a href="#cb41-471"></a>)</span>
 <span id="cb41-472"><a href="#cb41-472"></a></span>
-<span id="cb41-473"><a href="#cb41-473"></a>seu.s</span>
-<span id="cb41-474"><a href="#cb41-474"></a><span class="in">```</span></span>
-<span id="cb41-475"><a href="#cb41-475"></a></span>
-<span id="cb41-476"><a href="#cb41-476"></a>As you can see, this retained most of the cells but not all!</span>
-<span id="cb41-477"><a href="#cb41-477"></a></span>
-<span id="cb41-478"><a href="#cb41-478"></a><span class="fu">## Save unfiltered object to disk</span></span>
+<span id="cb41-473"><a href="#cb41-473"></a><span class="co"># For testing purposes, we are here subsetting the seurat object to 20k peaks and 5k cells.</span></span>
+<span id="cb41-474"><a href="#cb41-474"></a></span>
+<span id="cb41-475"><a href="#cb41-475"></a><span class="do">######################################################</span></span>
+<span id="cb41-476"><a href="#cb41-476"></a><span class="co"># Do NOT execute this line when you run the vignette #</span></span>
+<span id="cb41-477"><a href="#cb41-477"></a><span class="do">######################################################</span></span>
+<span id="cb41-478"><a href="#cb41-478"></a>seu.s <span class="ot">=</span> seu.s[<span class="dv">1</span><span class="sc">:</span><span class="dv">20000</span>, <span class="dv">1</span><span class="sc">:</span><span class="dv">5000</span>]</span>
 <span id="cb41-479"><a href="#cb41-479"></a></span>
-<span id="cb41-480"><a href="#cb41-480"></a>It is time to save our original Seurat object to disk! We do so in a</span>
-<span id="cb41-481"><a href="#cb41-481"></a>special format, called <span class="in">`rds`</span>, which we can use later to quickly load our</span>
-<span id="cb41-482"><a href="#cb41-482"></a>Seurat object back into R using the function <span class="in">`readRDS()`</span>. In fact, in</span>
-<span id="cb41-483"><a href="#cb41-483"></a>all other vignettes that we will use in the course, this will be our</span>
-<span id="cb41-484"><a href="#cb41-484"></a>first step: Loading the preprocessed Seurat object into R using the</span>
-<span id="cb41-485"><a href="#cb41-485"></a><span class="in">`readRDS()`</span> function!</span>
+<span id="cb41-480"><a href="#cb41-480"></a>seu.s</span>
+<span id="cb41-481"><a href="#cb41-481"></a><span class="in">```</span></span>
+<span id="cb41-482"><a href="#cb41-482"></a></span>
+<span id="cb41-483"><a href="#cb41-483"></a>As you can see, this retained most of the cells but not all!</span>
+<span id="cb41-484"><a href="#cb41-484"></a></span>
+<span id="cb41-485"><a href="#cb41-485"></a><span class="fu">## Save unfiltered object to disk</span></span>
 <span id="cb41-486"><a href="#cb41-486"></a></span>
-<span id="cb41-487"><a href="#cb41-487"></a><span class="in">```{r saveObject1}</span></span>
-<span id="cb41-488"><a href="#cb41-488"></a><span class="co"># If we are sure that we do not use the unfiltered seu object anymore, </span></span>
-<span id="cb41-489"><a href="#cb41-489"></a><span class="co"># we can delete it here, or save it to disk</span></span>
-<span id="cb41-490"><a href="#cb41-490"></a><span class="fu">saveRDS</span>(seu, <span class="at">file =</span> <span class="fu">paste0</span>(outFolder,<span class="st">&quot;obj.rds&quot;</span>))</span>
-<span id="cb41-491"><a href="#cb41-491"></a></span>
-<span id="cb41-492"><a href="#cb41-492"></a><span class="co"># Let us not delete it here to allow changing the filtering above</span></span>
-<span id="cb41-493"><a href="#cb41-493"></a><span class="co"># if you need to save memory, delete the (unfiltered) Seurat oject</span></span>
-<span id="cb41-494"><a href="#cb41-494"></a><span class="fu">rm</span>(seu)</span>
-<span id="cb41-495"><a href="#cb41-495"></a></span>
-<span id="cb41-496"><a href="#cb41-496"></a><span class="in">```</span></span>
-<span id="cb41-497"><a href="#cb41-497"></a></span>
-<span id="cb41-498"><a href="#cb41-498"></a><span class="fu">## Normalization and dimensionality reduction</span></span>
-<span id="cb41-499"><a href="#cb41-499"></a></span>
-<span id="cb41-500"><a href="#cb41-500"></a><span class="ss">-   </span>Normalization: <span class="in">`Signac`</span> performs term frequency-inverse document</span>
-<span id="cb41-501"><a href="#cb41-501"></a>    frequency (TF-IDF) normalization. This is a two-step normalization</span>
-<span id="cb41-502"><a href="#cb41-502"></a>    procedure, that both normalizes across cells to correct for</span>
-<span id="cb41-503"><a href="#cb41-503"></a>    differences in cellular sequencing depth, and across peaks to give</span>
-<span id="cb41-504"><a href="#cb41-504"></a>    higher values to more rare peaks.</span>
-<span id="cb41-505"><a href="#cb41-505"></a></span>
-<span id="cb41-506"><a href="#cb41-506"></a><span class="ss">-   </span>Feature selection: The low dynamic range of scATAC-seq data makes it</span>
-<span id="cb41-507"><a href="#cb41-507"></a>    challenging to perform variable feature selection, as we do for</span>
-<span id="cb41-508"><a href="#cb41-508"></a>    scRNA-seq. Instead, we can choose to use only the top *n*% of</span>
-<span id="cb41-509"><a href="#cb41-509"></a>    features (peaks) for dimensional reduction, or remove features</span>
-<span id="cb41-510"><a href="#cb41-510"></a>    present in less than *n* cells with the <span class="in">`FindTopFeatures()`</span></span>
-<span id="cb41-511"><a href="#cb41-511"></a>    function. Here, we will all features, though we note that we see</span>
-<span id="cb41-512"><a href="#cb41-512"></a>    very similar results when using only a subset of features (try</span>
-<span id="cb41-513"><a href="#cb41-513"></a>    setting min.cutoff to &#39;q75&#39; to use the top 25% all peaks), with</span>
-<span id="cb41-514"><a href="#cb41-514"></a>    faster runtimes. Features used for dimensional reduction are</span>
-<span id="cb41-515"><a href="#cb41-515"></a>    automatically set as <span class="in">`VariableFeatures()`</span> for the Seurat object by</span>
-<span id="cb41-516"><a href="#cb41-516"></a>    this function.</span>
-<span id="cb41-517"><a href="#cb41-517"></a></span>
-<span id="cb41-518"><a href="#cb41-518"></a><span class="ss">-   </span>Dimension reduction: We next run singular value decomposition (SVD)</span>
-<span id="cb41-519"><a href="#cb41-519"></a>    on the TD-IDF matrix, using the features (peaks) selected above.</span>
-<span id="cb41-520"><a href="#cb41-520"></a>    This returns a reduced dimension representation of the object (for</span>
-<span id="cb41-521"><a href="#cb41-521"></a>    users who are more familiar with scRNA-seq, you can think of this as</span>
-<span id="cb41-522"><a href="#cb41-522"></a>    analogous to the output of PCA).</span>
-<span id="cb41-523"><a href="#cb41-523"></a></span>
-<span id="cb41-524"><a href="#cb41-524"></a>The combined steps of TF-IDF followed by SVD are known as latent</span>
-<span id="cb41-525"><a href="#cb41-525"></a>semantic indexing (LSI), and were first introduced for the analysis of</span>
-<span id="cb41-526"><a href="#cb41-526"></a>scATAC-seq data by [Cusanovich et al.</span>
-<span id="cb41-527"><a href="#cb41-527"></a>2015](https://science.sciencemag.org/content/367/6473/45.full).</span>
-<span id="cb41-528"><a href="#cb41-528"></a></span>
-<span id="cb41-529"><a href="#cb41-529"></a>You may have heard about <span class="in">`scTransform`</span> for scRNA-seq data, wondering whether we can also apply this to scATAC-Seq data. The short answer: no. The reason is as follows: <span class="in">`scTransform`</span>expects the data to follow a negative binomial or poisson distribution, which is not the case for scATAC data. It is also trying to normalize the data in a way that accounts for the strong mean-variance relationship in scRNA-seq, which is not something that we observe in scATAC due to the much lower dynamic range. From a practical perspective also, we want to preserve the sparsity of the data when normalizing scATAC-seq due to the large number of features we have. If we performed a normalization that lost the sparsity, we would have a very large dense matrix that will require a huge amount of memory to hold. As you can see, each data type requires its own specific normalization that incorporates the data-type specifics. </span>
+<span id="cb41-487"><a href="#cb41-487"></a>It is time to save our original Seurat object to disk! We do so in a</span>
+<span id="cb41-488"><a href="#cb41-488"></a>special format, called <span class="in">`rds`</span>, which we can use later to quickly load our</span>
+<span id="cb41-489"><a href="#cb41-489"></a>Seurat object back into R using the function <span class="in">`readRDS()`</span>. In fact, in</span>
+<span id="cb41-490"><a href="#cb41-490"></a>all other vignettes that we will use in the course, this will be our</span>
+<span id="cb41-491"><a href="#cb41-491"></a>first step: Loading the preprocessed Seurat object into R using the</span>
+<span id="cb41-492"><a href="#cb41-492"></a><span class="in">`readRDS()`</span> function!</span>
+<span id="cb41-493"><a href="#cb41-493"></a></span>
+<span id="cb41-494"><a href="#cb41-494"></a><span class="in">```{r saveObject1}</span></span>
+<span id="cb41-495"><a href="#cb41-495"></a><span class="co"># If we are sure that we do not use the unfiltered seu object anymore, </span></span>
+<span id="cb41-496"><a href="#cb41-496"></a><span class="co"># we can delete it here, or save it to disk</span></span>
+<span id="cb41-497"><a href="#cb41-497"></a><span class="fu">saveRDS</span>(seu, <span class="at">file =</span> <span class="fu">paste0</span>(outFolder,<span class="st">&quot;obj.rds&quot;</span>))</span>
+<span id="cb41-498"><a href="#cb41-498"></a></span>
+<span id="cb41-499"><a href="#cb41-499"></a><span class="co"># Let us not delete it here to allow changing the filtering above</span></span>
+<span id="cb41-500"><a href="#cb41-500"></a><span class="co"># if you need to save memory, delete the (unfiltered) Seurat oject</span></span>
+<span id="cb41-501"><a href="#cb41-501"></a><span class="fu">rm</span>(seu)</span>
+<span id="cb41-502"><a href="#cb41-502"></a></span>
+<span id="cb41-503"><a href="#cb41-503"></a><span class="in">```</span></span>
+<span id="cb41-504"><a href="#cb41-504"></a></span>
+<span id="cb41-505"><a href="#cb41-505"></a><span class="fu">## Normalization and dimensionality reduction</span></span>
+<span id="cb41-506"><a href="#cb41-506"></a></span>
+<span id="cb41-507"><a href="#cb41-507"></a><span class="ss">-   </span>Normalization: <span class="in">`Signac`</span> performs term frequency-inverse document</span>
+<span id="cb41-508"><a href="#cb41-508"></a>    frequency (TF-IDF) normalization. This is a two-step normalization</span>
+<span id="cb41-509"><a href="#cb41-509"></a>    procedure, that both normalizes across cells to correct for</span>
+<span id="cb41-510"><a href="#cb41-510"></a>    differences in cellular sequencing depth, and across peaks to give</span>
+<span id="cb41-511"><a href="#cb41-511"></a>    higher values to more rare peaks.</span>
+<span id="cb41-512"><a href="#cb41-512"></a></span>
+<span id="cb41-513"><a href="#cb41-513"></a><span class="ss">-   </span>Feature selection: The low dynamic range of scATAC-seq data makes it</span>
+<span id="cb41-514"><a href="#cb41-514"></a>    challenging to perform variable feature selection, as we do for</span>
+<span id="cb41-515"><a href="#cb41-515"></a>    scRNA-seq. Instead, we can choose to use only the top *n*% of</span>
+<span id="cb41-516"><a href="#cb41-516"></a>    features (peaks) for dimensional reduction, or remove features</span>
+<span id="cb41-517"><a href="#cb41-517"></a>    present in less than *n* cells with the <span class="in">`FindTopFeatures()`</span></span>
+<span id="cb41-518"><a href="#cb41-518"></a>    function. Here, we will all features, though we note that we see</span>
+<span id="cb41-519"><a href="#cb41-519"></a>    very similar results when using only a subset of features (try</span>
+<span id="cb41-520"><a href="#cb41-520"></a>    setting min.cutoff to &#39;q75&#39; to use the top 25% all peaks), with</span>
+<span id="cb41-521"><a href="#cb41-521"></a>    faster runtimes. Features used for dimensional reduction are</span>
+<span id="cb41-522"><a href="#cb41-522"></a>    automatically set as <span class="in">`VariableFeatures()`</span> for the Seurat object by</span>
+<span id="cb41-523"><a href="#cb41-523"></a>    this function.</span>
+<span id="cb41-524"><a href="#cb41-524"></a></span>
+<span id="cb41-525"><a href="#cb41-525"></a><span class="ss">-   </span>Dimension reduction: We next run singular value decomposition (SVD)</span>
+<span id="cb41-526"><a href="#cb41-526"></a>    on the TD-IDF matrix, using the features (peaks) selected above.</span>
+<span id="cb41-527"><a href="#cb41-527"></a>    This returns a reduced dimension representation of the object (for</span>
+<span id="cb41-528"><a href="#cb41-528"></a>    users who are more familiar with scRNA-seq, you can think of this as</span>
+<span id="cb41-529"><a href="#cb41-529"></a>    analogous to the output of PCA).</span>
 <span id="cb41-530"><a href="#cb41-530"></a></span>
-<span id="cb41-531"><a href="#cb41-531"></a>**In the following, we give more background on dimensionality reduction</span>
-<span id="cb41-532"><a href="#cb41-532"></a>with scATAC-seq data, which we took from the [archR</span>
-<span id="cb41-533"><a href="#cb41-533"></a>website](https://www.archrproject.com/bookdown/dimensionality-reduction-with-archr.html)**.</span>
-<span id="cb41-534"><a href="#cb41-534"></a>In general, dimensionality reduction with scATAC-seq is challenging due</span>
-<span id="cb41-535"><a href="#cb41-535"></a>to the sparsity of the data. In scATAC-seq, a particular site can either</span>
-<span id="cb41-536"><a href="#cb41-536"></a>be accessible on one allele, both alleles, or no alleles. Even in</span>
-<span id="cb41-537"><a href="#cb41-537"></a>higher-quality scATAC-seq data, the majority of accessible regions are</span>
-<span id="cb41-538"><a href="#cb41-538"></a>not transposed and this leads to many loci having 0 accessibility</span>
-<span id="cb41-539"><a href="#cb41-539"></a>alleles. Moreover, when we see (for example) three Tn5 insertions within</span>
-<span id="cb41-540"><a href="#cb41-540"></a>a single peak region in a single cell, the sparsity of the data prevents</span>
-<span id="cb41-541"><a href="#cb41-541"></a>us from confidently determining that this site in this cell is actually</span>
-<span id="cb41-542"><a href="#cb41-542"></a>three times more accessible than another cell that only has one</span>
-<span id="cb41-543"><a href="#cb41-543"></a>insertion in the same site. For this reason a lot of analytical</span>
-<span id="cb41-544"><a href="#cb41-544"></a>strategies work on a binarized scATAC-seq data matrix. This binarized</span>
-<span id="cb41-545"><a href="#cb41-545"></a>matrix still ends up being mostly 0s because transposition is rare.</span>
-<span id="cb41-546"><a href="#cb41-546"></a>However, it is important to note that a 0 in scATAC-seq could mean</span>
-<span id="cb41-547"><a href="#cb41-547"></a>&quot;non-accessible&quot; or &quot;not sampled&quot; and these two inferences are very</span>
-<span id="cb41-548"><a href="#cb41-548"></a>different from a biological standpoint. Because of this, the 1s have</span>
-<span id="cb41-549"><a href="#cb41-549"></a>information and the 0s do not. This low information content is what</span>
-<span id="cb41-550"><a href="#cb41-550"></a>makes our scATAC-seq data sparse.</span>
-<span id="cb41-551"><a href="#cb41-551"></a></span>
-<span id="cb41-552"><a href="#cb41-552"></a>If you were to perform a standard dimensionality reduction, like</span>
-<span id="cb41-553"><a href="#cb41-553"></a>*Principal Component Analysis* (PCA), on this sparse insertion counts</span>
-<span id="cb41-554"><a href="#cb41-554"></a>matrix and plot the top two principal components (PCs), you would not</span>
-<span id="cb41-555"><a href="#cb41-555"></a>obtain the desired result because the sparsity causes high inter-cell</span>
-<span id="cb41-556"><a href="#cb41-556"></a>similarity at all of the 0 positions. To get around this issue, we use a</span>
-<span id="cb41-557"><a href="#cb41-557"></a>layered dimensionality reduction approach. First, we use *Latent</span>
-<span id="cb41-558"><a href="#cb41-558"></a>Semantic Indexing* (LSI), an approach from natural language processing</span>
-<span id="cb41-559"><a href="#cb41-559"></a>that was originally designed to assess document similarity based on word</span>
-<span id="cb41-560"><a href="#cb41-560"></a>counts. This solution was created for natural language processing</span>
-<span id="cb41-561"><a href="#cb41-561"></a>because the data is sparse and noisy (many different words and many low</span>
-<span id="cb41-562"><a href="#cb41-562"></a>frequency words). LSI was first introduced for scATAC-seq by *Cusanovich</span>
-<span id="cb41-563"><a href="#cb41-563"></a>et al*. (Science 2015). In the case of scATAC-seq, different samples are</span>
-<span id="cb41-564"><a href="#cb41-564"></a>the documents and different regions/peaks are the words. First, we</span>
-<span id="cb41-565"><a href="#cb41-565"></a>calculate the term frequency by depth normalization per single cell.</span>
-<span id="cb41-566"><a href="#cb41-566"></a>These values are then normalized by the inverse document frequency which</span>
-<span id="cb41-567"><a href="#cb41-567"></a>weights features by how often they occur to identify features that are</span>
-<span id="cb41-568"><a href="#cb41-568"></a>more &quot;specific&quot; rather than commonly accessible. The resultant *term</span>
-<span id="cb41-569"><a href="#cb41-569"></a>frequency-inverse document frequency* (TF-IDF) matrix reflects how</span>
-<span id="cb41-570"><a href="#cb41-570"></a>important a word (aka region/peak) is to a document (aka sample). Then,</span>
-<span id="cb41-571"><a href="#cb41-571"></a>through a technique called *singular value decomposition* (SVD), the</span>
-<span id="cb41-572"><a href="#cb41-572"></a>most valuable information across samples is identified and represented</span>
-<span id="cb41-573"><a href="#cb41-573"></a>in a lower dimensional space. LSI allows you to reduce the</span>
-<span id="cb41-574"><a href="#cb41-574"></a>dimensionality of the sparse insertion counts matrix from many thousands</span>
-<span id="cb41-575"><a href="#cb41-575"></a>to tens or hundreds. Then, a more conventional dimensionality reduction</span>
-<span id="cb41-576"><a href="#cb41-576"></a>technique, such as *Uniform Manifold Approximation and Projection*</span>
-<span id="cb41-577"><a href="#cb41-577"></a>(UMAP) or *t-distributed stochastic neighbor embedding* (t-SNE) (see</span>
-<span id="cb41-578"><a href="#cb41-578"></a>below) can be used to visualize the data. Let&#39;s create a two-dimensional *embedding* of the data!</span>
-<span id="cb41-579"><a href="#cb41-579"></a></span>
-<span id="cb41-580"><a href="#cb41-580"></a><span class="in">```{r normalization}</span></span>
-<span id="cb41-581"><a href="#cb41-581"></a>seu.s <span class="ot">&lt;-</span> seu.s <span class="sc">%&gt;%</span></span>
-<span id="cb41-582"><a href="#cb41-582"></a>        <span class="fu">RunTFIDF</span>(<span class="at">method =</span> <span class="dv">1</span>) <span class="sc">%&gt;%</span>  </span>
-<span id="cb41-583"><a href="#cb41-583"></a>        <span class="fu">FindTopFeatures</span>(<span class="at">min.cutoff =</span> <span class="st">&quot;q25&quot;</span>) <span class="sc">%&gt;%</span> </span>
-<span id="cb41-584"><a href="#cb41-584"></a>        <span class="fu">RunSVD</span>(<span class="at">reduction.key =</span> <span class="st">&#39;LSI_&#39;</span>, <span class="at">reduction.name =</span> <span class="st">&#39;lsi&#39;</span>)</span>
-<span id="cb41-585"><a href="#cb41-585"></a><span class="in">```</span></span>
+<span id="cb41-531"><a href="#cb41-531"></a>The combined steps of TF-IDF followed by SVD are known as latent</span>
+<span id="cb41-532"><a href="#cb41-532"></a>semantic indexing (LSI), and were first introduced for the analysis of</span>
+<span id="cb41-533"><a href="#cb41-533"></a>scATAC-seq data by [Cusanovich et al.</span>
+<span id="cb41-534"><a href="#cb41-534"></a>2015](https://science.sciencemag.org/content/367/6473/45.full).</span>
+<span id="cb41-535"><a href="#cb41-535"></a></span>
+<span id="cb41-536"><a href="#cb41-536"></a>You may have heard about <span class="in">`scTransform`</span> for scRNA-seq data, wondering whether we can also apply this to scATAC-Seq data. The short answer: no. The reason is as follows: <span class="in">`scTransform`</span>expects the data to follow a negative binomial or poisson distribution, which is not the case for scATAC data. It is also trying to normalize the data in a way that accounts for the strong mean-variance relationship in scRNA-seq, which is not something that we observe in scATAC due to the much lower dynamic range. From a practical perspective also, we want to preserve the sparsity of the data when normalizing scATAC-seq due to the large number of features we have. If we performed a normalization that lost the sparsity, we would have a very large dense matrix that will require a huge amount of memory to hold. As you can see, each data type requires its own specific normalization that incorporates the data-type specifics. </span>
+<span id="cb41-537"><a href="#cb41-537"></a></span>
+<span id="cb41-538"><a href="#cb41-538"></a>**In the following, we give more background on dimensionality reduction</span>
+<span id="cb41-539"><a href="#cb41-539"></a>with scATAC-seq data, which we took from the [archR</span>
+<span id="cb41-540"><a href="#cb41-540"></a>website](https://www.archrproject.com/bookdown/dimensionality-reduction-with-archr.html)**.</span>
+<span id="cb41-541"><a href="#cb41-541"></a>In general, dimensionality reduction with scATAC-seq is challenging due</span>
+<span id="cb41-542"><a href="#cb41-542"></a>to the sparsity of the data. In scATAC-seq, a particular site can either</span>
+<span id="cb41-543"><a href="#cb41-543"></a>be accessible on one allele, both alleles, or no alleles. Even in</span>
+<span id="cb41-544"><a href="#cb41-544"></a>higher-quality scATAC-seq data, the majority of accessible regions are</span>
+<span id="cb41-545"><a href="#cb41-545"></a>not transposed and this leads to many loci having 0 accessibility</span>
+<span id="cb41-546"><a href="#cb41-546"></a>alleles. Moreover, when we see (for example) three Tn5 insertions within</span>
+<span id="cb41-547"><a href="#cb41-547"></a>a single peak region in a single cell, the sparsity of the data prevents</span>
+<span id="cb41-548"><a href="#cb41-548"></a>us from confidently determining that this site in this cell is actually</span>
+<span id="cb41-549"><a href="#cb41-549"></a>three times more accessible than another cell that only has one</span>
+<span id="cb41-550"><a href="#cb41-550"></a>insertion in the same site. For this reason a lot of analytical</span>
+<span id="cb41-551"><a href="#cb41-551"></a>strategies work on a binarized scATAC-seq data matrix. This binarized</span>
+<span id="cb41-552"><a href="#cb41-552"></a>matrix still ends up being mostly 0s because transposition is rare.</span>
+<span id="cb41-553"><a href="#cb41-553"></a>However, it is important to note that a 0 in scATAC-seq could mean</span>
+<span id="cb41-554"><a href="#cb41-554"></a>&quot;non-accessible&quot; or &quot;not sampled&quot; and these two inferences are very</span>
+<span id="cb41-555"><a href="#cb41-555"></a>different from a biological standpoint. Because of this, the 1s have</span>
+<span id="cb41-556"><a href="#cb41-556"></a>information and the 0s do not. This low information content is what</span>
+<span id="cb41-557"><a href="#cb41-557"></a>makes our scATAC-seq data sparse.</span>
+<span id="cb41-558"><a href="#cb41-558"></a></span>
+<span id="cb41-559"><a href="#cb41-559"></a>If you were to perform a standard dimensionality reduction, like</span>
+<span id="cb41-560"><a href="#cb41-560"></a>*Principal Component Analysis* (PCA), on this sparse insertion counts</span>
+<span id="cb41-561"><a href="#cb41-561"></a>matrix and plot the top two principal components (PCs), you would not</span>
+<span id="cb41-562"><a href="#cb41-562"></a>obtain the desired result because the sparsity causes high inter-cell</span>
+<span id="cb41-563"><a href="#cb41-563"></a>similarity at all of the 0 positions. To get around this issue, we use a</span>
+<span id="cb41-564"><a href="#cb41-564"></a>layered dimensionality reduction approach. First, we use *Latent</span>
+<span id="cb41-565"><a href="#cb41-565"></a>Semantic Indexing* (LSI), an approach from natural language processing</span>
+<span id="cb41-566"><a href="#cb41-566"></a>that was originally designed to assess document similarity based on word</span>
+<span id="cb41-567"><a href="#cb41-567"></a>counts. This solution was created for natural language processing</span>
+<span id="cb41-568"><a href="#cb41-568"></a>because the data is sparse and noisy (many different words and many low</span>
+<span id="cb41-569"><a href="#cb41-569"></a>frequency words). LSI was first introduced for scATAC-seq by *Cusanovich</span>
+<span id="cb41-570"><a href="#cb41-570"></a>et al*. (Science 2015). In the case of scATAC-seq, different samples are</span>
+<span id="cb41-571"><a href="#cb41-571"></a>the documents and different regions/peaks are the words. First, we</span>
+<span id="cb41-572"><a href="#cb41-572"></a>calculate the term frequency by depth normalization per single cell.</span>
+<span id="cb41-573"><a href="#cb41-573"></a>These values are then normalized by the inverse document frequency which</span>
+<span id="cb41-574"><a href="#cb41-574"></a>weights features by how often they occur to identify features that are</span>
+<span id="cb41-575"><a href="#cb41-575"></a>more &quot;specific&quot; rather than commonly accessible. The resultant *term</span>
+<span id="cb41-576"><a href="#cb41-576"></a>frequency-inverse document frequency* (TF-IDF) matrix reflects how</span>
+<span id="cb41-577"><a href="#cb41-577"></a>important a word (aka region/peak) is to a document (aka sample). Then,</span>
+<span id="cb41-578"><a href="#cb41-578"></a>through a technique called *singular value decomposition* (SVD), the</span>
+<span id="cb41-579"><a href="#cb41-579"></a>most valuable information across samples is identified and represented</span>
+<span id="cb41-580"><a href="#cb41-580"></a>in a lower dimensional space. LSI allows you to reduce the</span>
+<span id="cb41-581"><a href="#cb41-581"></a>dimensionality of the sparse insertion counts matrix from many thousands</span>
+<span id="cb41-582"><a href="#cb41-582"></a>to tens or hundreds. Then, a more conventional dimensionality reduction</span>
+<span id="cb41-583"><a href="#cb41-583"></a>technique, such as *Uniform Manifold Approximation and Projection*</span>
+<span id="cb41-584"><a href="#cb41-584"></a>(UMAP) or *t-distributed stochastic neighbor embedding* (t-SNE) (see</span>
+<span id="cb41-585"><a href="#cb41-585"></a>below) can be used to visualize the data. Let&#39;s create a two-dimensional *embedding* of the data!</span>
 <span id="cb41-586"><a href="#cb41-586"></a></span>
-<span id="cb41-587"><a href="#cb41-587"></a><span class="fu">### Examining the LSI components and removing components</span></span>
-<span id="cb41-588"><a href="#cb41-588"></a></span>
-<span id="cb41-589"><a href="#cb41-589"></a>The first LSI component often captures sequencing depth (technical</span>
-<span id="cb41-590"><a href="#cb41-590"></a>variation) rather than biological variation. If this is the case, the</span>
-<span id="cb41-591"><a href="#cb41-591"></a>component should be removed from downstream analysis. We can assess the</span>
-<span id="cb41-592"><a href="#cb41-592"></a>correlation between each LSI component and sequencing depth using the</span>
-<span id="cb41-593"><a href="#cb41-593"></a><span class="in">`DepthCor()`</span> function:</span>
-<span id="cb41-594"><a href="#cb41-594"></a></span>
-<span id="cb41-595"><a href="#cb41-595"></a><span class="in">```{r lsiPlot}</span></span>
-<span id="cb41-596"><a href="#cb41-596"></a>p1 <span class="ot">=</span> <span class="fu">DepthCor</span>(seu.s, <span class="at">reduction =</span> <span class="st">&quot;lsi&quot;</span>)</span>
-<span id="cb41-597"><a href="#cb41-597"></a>p1</span>
-<span id="cb41-598"><a href="#cb41-598"></a><span class="in">```</span></span>
-<span id="cb41-599"><a href="#cb41-599"></a></span>
-<span id="cb41-600"><a href="#cb41-600"></a>Here we see there is a very strong (negative) correlation between the</span>
-<span id="cb41-601"><a href="#cb41-601"></a>first LSI component and the total number of counts for the cell, so we</span>
-<span id="cb41-602"><a href="#cb41-602"></a>will perform downstream steps without this component.</span>
-<span id="cb41-603"><a href="#cb41-603"></a></span>
-<span id="cb41-604"><a href="#cb41-604"></a><span class="fu">## Non-linear dimension reduction for visualization and clustering</span></span>
-<span id="cb41-605"><a href="#cb41-605"></a></span>
-<span id="cb41-606"><a href="#cb41-606"></a>Now that the cells are embedded in a low-dimensional space, we can use</span>
-<span id="cb41-607"><a href="#cb41-607"></a>methods commonly applied for the analysis of scRNA-seq data to perform</span>
-<span id="cb41-608"><a href="#cb41-608"></a>graph-based clustering and non-linear dimension reduction for</span>
-<span id="cb41-609"><a href="#cb41-609"></a>visualization. The functions <span class="in">`RunUMAP()`</span>, <span class="in">`FindNeighbors()`</span>, and</span>
-<span id="cb41-610"><a href="#cb41-610"></a><span class="in">`FindClusters()`</span> all come from the Seurat package.</span>
-<span id="cb41-611"><a href="#cb41-611"></a></span>
-<span id="cb41-612"><a href="#cb41-612"></a><span class="fu">### Visualize embeddings: UMAP</span></span>
-<span id="cb41-613"><a href="#cb41-613"></a></span>
-<span id="cb41-614"><a href="#cb41-614"></a>Th following description is taken and slightly modified from</span>
-<span id="cb41-615"><a href="#cb41-615"></a><span class="co">[</span><span class="ot">here</span><span class="co">](https://www.archrproject.com/bookdown/single-cell-embeddings.html)</span>.</span>
-<span id="cb41-616"><a href="#cb41-616"></a>In general, embeddings such as *Uniform Manifold Approximation and</span>
-<span id="cb41-617"><a href="#cb41-617"></a>Projection* (UMAP) or *t-distributed stochastic neighbor embedding*</span>
-<span id="cb41-618"><a href="#cb41-618"></a>(t-SNE), are used to visualize single cells in reduced dimension space.</span>
-<span id="cb41-619"><a href="#cb41-619"></a>They each have distinct advantages and disadvantages. We call them</span>
-<span id="cb41-620"><a href="#cb41-620"></a>*embeddings* because they are strictly used to visualize the clusters</span>
-<span id="cb41-621"><a href="#cb41-621"></a>and are not used to identify clusters which is done in an LSI sub-space</span>
-<span id="cb41-622"><a href="#cb41-622"></a>as mentioned before. The primary difference between UMAP and t-SNE is</span>
-<span id="cb41-623"><a href="#cb41-623"></a>the interpretation of the distance between cells or clusters. t-SNE is</span>
-<span id="cb41-624"><a href="#cb41-624"></a>designed to preserve the local structure in the data while UMAP is</span>
-<span id="cb41-625"><a href="#cb41-625"></a>designed to preserve both the local and most of the global structure in</span>
-<span id="cb41-626"><a href="#cb41-626"></a>the data. In theory, this means that the distance between two clusters</span>
-<span id="cb41-627"><a href="#cb41-627"></a>is not informative in t-SNE but is informative in UMAP. For example,</span>
-<span id="cb41-628"><a href="#cb41-628"></a>t-SNE does not allow you to say that Cluster A is more similar to</span>
-<span id="cb41-629"><a href="#cb41-629"></a>Cluster B than it is to Cluster C based on the observation that Cluster</span>
-<span id="cb41-630"><a href="#cb41-630"></a>A is located closer to Cluster B than Cluster C on the t-SNE. UMAP, on</span>
-<span id="cb41-631"><a href="#cb41-631"></a>the other hand, is designed to permit this type of comparison, though it</span>
-<span id="cb41-632"><a href="#cb41-632"></a>is worth noting that UMAP is a new enough method that this is still</span>
-<span id="cb41-633"><a href="#cb41-633"></a>being flushed out in the literature.</span>
-<span id="cb41-634"><a href="#cb41-634"></a></span>
-<span id="cb41-635"><a href="#cb41-635"></a>It is important to note that neither t-SNE nor UMAP are naturally</span>
-<span id="cb41-636"><a href="#cb41-636"></a>deterministic (same input always gives exactly the same output).</span>
-<span id="cb41-637"><a href="#cb41-637"></a>However, t-SNE shows much more randomness across multiple replicates of</span>
-<span id="cb41-638"><a href="#cb41-638"></a>the same input than does UMAP. Moreover, UMAP as implemented in the</span>
-<span id="cb41-639"><a href="#cb41-639"></a><span class="in">`uwot`</span> package is effectively deterministic when using the same random</span>
-<span id="cb41-640"><a href="#cb41-640"></a>seed. The choice of whether to use UMAP or t-SNE is nuanced but from our</span>
-<span id="cb41-641"><a href="#cb41-641"></a>experience, UMAP works very well for a diverse set of applications and</span>
-<span id="cb41-642"><a href="#cb41-642"></a>this is our standard choice for scATAC-seq data. UMAP also performs</span>
-<span id="cb41-643"><a href="#cb41-643"></a>faster than t-SNE. Perhaps most importantly, with UMAP you can create an</span>
-<span id="cb41-644"><a href="#cb41-644"></a>embedding and project new samples into that embedding and this is not</span>
-<span id="cb41-645"><a href="#cb41-645"></a>possible with t-SNE because the fitting and prediction of data happens</span>
-<span id="cb41-646"><a href="#cb41-646"></a>simultaneously.</span>
-<span id="cb41-647"><a href="#cb41-647"></a></span>
-<span id="cb41-648"><a href="#cb41-648"></a>Regardless of which method you choose, the input parameters can have</span>
-<span id="cb41-649"><a href="#cb41-649"></a>drastic effects on the resulting embedding. Because of this, it is</span>
-<span id="cb41-650"><a href="#cb41-650"></a>important to understand the various input parameters and to tweak these</span>
-<span id="cb41-651"><a href="#cb41-651"></a>to best meet the needs of your own data.</span>
-<span id="cb41-652"><a href="#cb41-652"></a></span>
-<span id="cb41-653"><a href="#cb41-653"></a>Here, due to the aforementioned advantages of UMAP, we will focus on</span>
-<span id="cb41-654"><a href="#cb41-654"></a>UMAPs only and ignore t-SNE. Feel free to also produce t-SNE plots if</span>
-<span id="cb41-655"><a href="#cb41-655"></a>you are interested!</span>
-<span id="cb41-656"><a href="#cb41-656"></a></span>
-<span id="cb41-657"><a href="#cb41-657"></a><span class="in">```{r umap}</span></span>
-<span id="cb41-658"><a href="#cb41-658"></a></span>
-<span id="cb41-659"><a href="#cb41-659"></a><span class="co"># First, we explicitly define some parameters for creating the UMAP and </span></span>
-<span id="cb41-660"><a href="#cb41-660"></a><span class="co"># subsequent functions related to clustering</span></span>
-<span id="cb41-661"><a href="#cb41-661"></a></span>
-<span id="cb41-662"><a href="#cb41-662"></a><span class="co"># Exclude the first LSI component due to the strong correlation, see the plot above</span></span>
-<span id="cb41-663"><a href="#cb41-663"></a>dims_sel <span class="ot">=</span> <span class="dv">2</span><span class="sc">:</span><span class="dv">20</span></span>
-<span id="cb41-664"><a href="#cb41-664"></a>nn <span class="ot">=</span> <span class="dv">30</span></span>
-<span id="cb41-665"><a href="#cb41-665"></a>res <span class="ot">=</span> <span class="fl">0.5</span></span>
-<span id="cb41-666"><a href="#cb41-666"></a>clusters_alg <span class="ot">=</span> <span class="dv">1</span></span>
-<span id="cb41-667"><a href="#cb41-667"></a></span>
-<span id="cb41-668"><a href="#cb41-668"></a><span class="co"># We are now ready to run it!</span></span>
-<span id="cb41-669"><a href="#cb41-669"></a>seu.s <span class="ot">&lt;-</span> seu.s <span class="sc">%&gt;%</span> </span>
-<span id="cb41-670"><a href="#cb41-670"></a>            <span class="fu">RunUMAP</span>(<span class="at">dims =</span> dims_sel, </span>
-<span id="cb41-671"><a href="#cb41-671"></a>                    <span class="at">n.neighbors =</span> nn, <span class="at">verbose =</span> <span class="cn">FALSE</span>,</span>
-<span id="cb41-672"><a href="#cb41-672"></a>                     <span class="co"># a = 0.9, b = 0.6, </span></span>
-<span id="cb41-673"><a href="#cb41-673"></a>                    <span class="at">metric =</span> <span class="st">&quot;cosine&quot;</span>, </span>
-<span id="cb41-674"><a href="#cb41-674"></a>                    <span class="at">reduction =</span> <span class="st">&quot;lsi&quot;</span>) <span class="sc">%&gt;%</span></span>
-<span id="cb41-675"><a href="#cb41-675"></a>            <span class="fu">FindNeighbors</span>(<span class="at">dims =</span> dims_sel, </span>
-<span id="cb41-676"><a href="#cb41-676"></a>                          <span class="at">graph.name =</span> <span class="st">&quot;ATAC_snn&quot;</span>,<span class="at">reduction =</span> <span class="st">&quot;lsi&quot;</span>) <span class="sc">%&gt;%</span></span>
-<span id="cb41-677"><a href="#cb41-677"></a>            <span class="fu">FindClusters</span>(<span class="at">resolution =</span> res, <span class="at">algorithm =</span> clusters_alg, </span>
-<span id="cb41-678"><a href="#cb41-678"></a>                         <span class="at">graph.name =</span> <span class="st">&quot;ATAC_snn&quot;</span>)</span>
-<span id="cb41-679"><a href="#cb41-679"></a></span>
-<span id="cb41-680"><a href="#cb41-680"></a></span>
-<span id="cb41-681"><a href="#cb41-681"></a><span class="in">```</span></span>
-<span id="cb41-682"><a href="#cb41-682"></a></span>
-<span id="cb41-683"><a href="#cb41-683"></a><span class="fu">### Visualize clusters in embedded space</span></span>
-<span id="cb41-684"><a href="#cb41-684"></a></span>
-<span id="cb41-685"><a href="#cb41-685"></a><span class="in">```{r umapPlot}</span></span>
+<span id="cb41-587"><a href="#cb41-587"></a><span class="in">```{r normalization}</span></span>
+<span id="cb41-588"><a href="#cb41-588"></a>seu.s <span class="ot">&lt;-</span> seu.s <span class="sc">%&gt;%</span></span>
+<span id="cb41-589"><a href="#cb41-589"></a>        <span class="fu">RunTFIDF</span>(<span class="at">method =</span> <span class="dv">1</span>) <span class="sc">%&gt;%</span>  </span>
+<span id="cb41-590"><a href="#cb41-590"></a>        <span class="fu">FindTopFeatures</span>(<span class="at">min.cutoff =</span> <span class="st">&quot;q25&quot;</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb41-591"><a href="#cb41-591"></a>        <span class="fu">RunSVD</span>(<span class="at">reduction.key =</span> <span class="st">&#39;LSI_&#39;</span>, <span class="at">reduction.name =</span> <span class="st">&#39;lsi&#39;</span>)</span>
+<span id="cb41-592"><a href="#cb41-592"></a><span class="in">```</span></span>
+<span id="cb41-593"><a href="#cb41-593"></a></span>
+<span id="cb41-594"><a href="#cb41-594"></a><span class="fu">### Examining the LSI components and removing components</span></span>
+<span id="cb41-595"><a href="#cb41-595"></a></span>
+<span id="cb41-596"><a href="#cb41-596"></a>The first LSI component often captures sequencing depth (technical</span>
+<span id="cb41-597"><a href="#cb41-597"></a>variation) rather than biological variation. If this is the case, the</span>
+<span id="cb41-598"><a href="#cb41-598"></a>component should be removed from downstream analysis. We can assess the</span>
+<span id="cb41-599"><a href="#cb41-599"></a>correlation between each LSI component and sequencing depth using the</span>
+<span id="cb41-600"><a href="#cb41-600"></a><span class="in">`DepthCor()`</span> function:</span>
+<span id="cb41-601"><a href="#cb41-601"></a></span>
+<span id="cb41-602"><a href="#cb41-602"></a><span class="in">```{r lsiPlot}</span></span>
+<span id="cb41-603"><a href="#cb41-603"></a>p1 <span class="ot">=</span> <span class="fu">DepthCor</span>(seu.s, <span class="at">reduction =</span> <span class="st">&quot;lsi&quot;</span>)</span>
+<span id="cb41-604"><a href="#cb41-604"></a>p1</span>
+<span id="cb41-605"><a href="#cb41-605"></a><span class="in">```</span></span>
+<span id="cb41-606"><a href="#cb41-606"></a></span>
+<span id="cb41-607"><a href="#cb41-607"></a>Here we see there is a very strong (negative) correlation between the</span>
+<span id="cb41-608"><a href="#cb41-608"></a>first LSI component and the total number of counts for the cell, so we</span>
+<span id="cb41-609"><a href="#cb41-609"></a>will perform downstream steps without this component.</span>
+<span id="cb41-610"><a href="#cb41-610"></a></span>
+<span id="cb41-611"><a href="#cb41-611"></a><span class="fu">## Non-linear dimension reduction for visualization and clustering</span></span>
+<span id="cb41-612"><a href="#cb41-612"></a></span>
+<span id="cb41-613"><a href="#cb41-613"></a>Now that the cells are embedded in a low-dimensional space, we can use</span>
+<span id="cb41-614"><a href="#cb41-614"></a>methods commonly applied for the analysis of scRNA-seq data to perform</span>
+<span id="cb41-615"><a href="#cb41-615"></a>graph-based clustering and non-linear dimension reduction for</span>
+<span id="cb41-616"><a href="#cb41-616"></a>visualization. The functions <span class="in">`RunUMAP()`</span>, <span class="in">`FindNeighbors()`</span>, and</span>
+<span id="cb41-617"><a href="#cb41-617"></a><span class="in">`FindClusters()`</span> all come from the Seurat package.</span>
+<span id="cb41-618"><a href="#cb41-618"></a></span>
+<span id="cb41-619"><a href="#cb41-619"></a><span class="fu">### Visualize embeddings: UMAP</span></span>
+<span id="cb41-620"><a href="#cb41-620"></a></span>
+<span id="cb41-621"><a href="#cb41-621"></a>Th following description is taken and slightly modified from</span>
+<span id="cb41-622"><a href="#cb41-622"></a><span class="co">[</span><span class="ot">here</span><span class="co">](https://www.archrproject.com/bookdown/single-cell-embeddings.html)</span>.</span>
+<span id="cb41-623"><a href="#cb41-623"></a>In general, embeddings such as *Uniform Manifold Approximation and</span>
+<span id="cb41-624"><a href="#cb41-624"></a>Projection* (UMAP) or *t-distributed stochastic neighbor embedding*</span>
+<span id="cb41-625"><a href="#cb41-625"></a>(t-SNE), are used to visualize single cells in reduced dimension space.</span>
+<span id="cb41-626"><a href="#cb41-626"></a>They each have distinct advantages and disadvantages. We call them</span>
+<span id="cb41-627"><a href="#cb41-627"></a>*embeddings* because they are strictly used to visualize the clusters</span>
+<span id="cb41-628"><a href="#cb41-628"></a>and are not used to identify clusters which is done in an LSI sub-space</span>
+<span id="cb41-629"><a href="#cb41-629"></a>as mentioned before. The primary difference between UMAP and t-SNE is</span>
+<span id="cb41-630"><a href="#cb41-630"></a>the interpretation of the distance between cells or clusters. t-SNE is</span>
+<span id="cb41-631"><a href="#cb41-631"></a>designed to preserve the local structure in the data while UMAP is</span>
+<span id="cb41-632"><a href="#cb41-632"></a>designed to preserve both the local and most of the global structure in</span>
+<span id="cb41-633"><a href="#cb41-633"></a>the data. In theory, this means that the distance between two clusters</span>
+<span id="cb41-634"><a href="#cb41-634"></a>is not informative in t-SNE but is informative in UMAP. For example,</span>
+<span id="cb41-635"><a href="#cb41-635"></a>t-SNE does not allow you to say that Cluster A is more similar to</span>
+<span id="cb41-636"><a href="#cb41-636"></a>Cluster B than it is to Cluster C based on the observation that Cluster</span>
+<span id="cb41-637"><a href="#cb41-637"></a>A is located closer to Cluster B than Cluster C on the t-SNE. UMAP, on</span>
+<span id="cb41-638"><a href="#cb41-638"></a>the other hand, is designed to permit this type of comparison, though it</span>
+<span id="cb41-639"><a href="#cb41-639"></a>is worth noting that UMAP is a new enough method that this is still</span>
+<span id="cb41-640"><a href="#cb41-640"></a>being flushed out in the literature.</span>
+<span id="cb41-641"><a href="#cb41-641"></a></span>
+<span id="cb41-642"><a href="#cb41-642"></a>It is important to note that neither t-SNE nor UMAP are naturally</span>
+<span id="cb41-643"><a href="#cb41-643"></a>deterministic (same input always gives exactly the same output).</span>
+<span id="cb41-644"><a href="#cb41-644"></a>However, t-SNE shows much more randomness across multiple replicates of</span>
+<span id="cb41-645"><a href="#cb41-645"></a>the same input than does UMAP. Moreover, UMAP as implemented in the</span>
+<span id="cb41-646"><a href="#cb41-646"></a><span class="in">`uwot`</span> package is effectively deterministic when using the same random</span>
+<span id="cb41-647"><a href="#cb41-647"></a>seed. The choice of whether to use UMAP or t-SNE is nuanced but from our</span>
+<span id="cb41-648"><a href="#cb41-648"></a>experience, UMAP works very well for a diverse set of applications and</span>
+<span id="cb41-649"><a href="#cb41-649"></a>this is our standard choice for scATAC-seq data. UMAP also performs</span>
+<span id="cb41-650"><a href="#cb41-650"></a>faster than t-SNE. Perhaps most importantly, with UMAP you can create an</span>
+<span id="cb41-651"><a href="#cb41-651"></a>embedding and project new samples into that embedding and this is not</span>
+<span id="cb41-652"><a href="#cb41-652"></a>possible with t-SNE because the fitting and prediction of data happens</span>
+<span id="cb41-653"><a href="#cb41-653"></a>simultaneously.</span>
+<span id="cb41-654"><a href="#cb41-654"></a></span>
+<span id="cb41-655"><a href="#cb41-655"></a>Regardless of which method you choose, the input parameters can have</span>
+<span id="cb41-656"><a href="#cb41-656"></a>drastic effects on the resulting embedding. Because of this, it is</span>
+<span id="cb41-657"><a href="#cb41-657"></a>important to understand the various input parameters and to tweak these</span>
+<span id="cb41-658"><a href="#cb41-658"></a>to best meet the needs of your own data.</span>
+<span id="cb41-659"><a href="#cb41-659"></a></span>
+<span id="cb41-660"><a href="#cb41-660"></a>Here, due to the aforementioned advantages of UMAP, we will focus on</span>
+<span id="cb41-661"><a href="#cb41-661"></a>UMAPs only and ignore t-SNE. Feel free to also produce t-SNE plots if</span>
+<span id="cb41-662"><a href="#cb41-662"></a>you are interested!</span>
+<span id="cb41-663"><a href="#cb41-663"></a></span>
+<span id="cb41-664"><a href="#cb41-664"></a><span class="in">```{r umap}</span></span>
+<span id="cb41-665"><a href="#cb41-665"></a></span>
+<span id="cb41-666"><a href="#cb41-666"></a><span class="co"># First, we explicitly define some parameters for creating the UMAP and </span></span>
+<span id="cb41-667"><a href="#cb41-667"></a><span class="co"># subsequent functions related to clustering</span></span>
+<span id="cb41-668"><a href="#cb41-668"></a></span>
+<span id="cb41-669"><a href="#cb41-669"></a><span class="co"># Exclude the first LSI component due to the strong correlation, see the plot above</span></span>
+<span id="cb41-670"><a href="#cb41-670"></a>dims_sel <span class="ot">=</span> <span class="dv">2</span><span class="sc">:</span><span class="dv">20</span></span>
+<span id="cb41-671"><a href="#cb41-671"></a>nn <span class="ot">=</span> <span class="dv">30</span></span>
+<span id="cb41-672"><a href="#cb41-672"></a>res <span class="ot">=</span> <span class="fl">0.5</span></span>
+<span id="cb41-673"><a href="#cb41-673"></a>clusters_alg <span class="ot">=</span> <span class="dv">1</span></span>
+<span id="cb41-674"><a href="#cb41-674"></a></span>
+<span id="cb41-675"><a href="#cb41-675"></a><span class="co"># We are now ready to run it!</span></span>
+<span id="cb41-676"><a href="#cb41-676"></a>seu.s <span class="ot">&lt;-</span> seu.s <span class="sc">%&gt;%</span> </span>
+<span id="cb41-677"><a href="#cb41-677"></a>            <span class="fu">RunUMAP</span>(<span class="at">dims =</span> dims_sel, </span>
+<span id="cb41-678"><a href="#cb41-678"></a>                    <span class="at">n.neighbors =</span> nn, <span class="at">verbose =</span> <span class="cn">FALSE</span>,</span>
+<span id="cb41-679"><a href="#cb41-679"></a>                     <span class="co"># a = 0.9, b = 0.6, </span></span>
+<span id="cb41-680"><a href="#cb41-680"></a>                    <span class="at">metric =</span> <span class="st">&quot;cosine&quot;</span>, </span>
+<span id="cb41-681"><a href="#cb41-681"></a>                    <span class="at">reduction =</span> <span class="st">&quot;lsi&quot;</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb41-682"><a href="#cb41-682"></a>            <span class="fu">FindNeighbors</span>(<span class="at">dims =</span> dims_sel, </span>
+<span id="cb41-683"><a href="#cb41-683"></a>                          <span class="at">graph.name =</span> <span class="st">&quot;ATAC_snn&quot;</span>,<span class="at">reduction =</span> <span class="st">&quot;lsi&quot;</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb41-684"><a href="#cb41-684"></a>            <span class="fu">FindClusters</span>(<span class="at">resolution =</span> res, <span class="at">algorithm =</span> clusters_alg, </span>
+<span id="cb41-685"><a href="#cb41-685"></a>                         <span class="at">graph.name =</span> <span class="st">&quot;ATAC_snn&quot;</span>)</span>
 <span id="cb41-686"><a href="#cb41-686"></a></span>
-<span id="cb41-687"><a href="#cb41-687"></a>res <span class="ot">=</span> <span class="fl">0.5</span></span>
-<span id="cb41-688"><a href="#cb41-688"></a></span>
-<span id="cb41-689"><a href="#cb41-689"></a><span class="fu">DimPlot</span>(<span class="at">object =</span> seu.s, <span class="at">pt.size =</span> <span class="fl">0.5</span>, </span>
-<span id="cb41-690"><a href="#cb41-690"></a>            <span class="at">group.by =</span> <span class="fu">paste0</span>(<span class="st">&quot;ATAC_snn_res.&quot;</span>,res),</span>
-<span id="cb41-691"><a href="#cb41-691"></a>            <span class="at">label =</span> <span class="cn">TRUE</span>, <span class="at">repel =</span> <span class="cn">TRUE</span>, <span class="at">label.box =</span> <span class="cn">TRUE</span>) </span>
-<span id="cb41-692"><a href="#cb41-692"></a></span>
+<span id="cb41-687"><a href="#cb41-687"></a></span>
+<span id="cb41-688"><a href="#cb41-688"></a><span class="in">```</span></span>
+<span id="cb41-689"><a href="#cb41-689"></a></span>
+<span id="cb41-690"><a href="#cb41-690"></a><span class="fu">### Visualize clusters in embedded space</span></span>
+<span id="cb41-691"><a href="#cb41-691"></a></span>
+<span id="cb41-692"><a href="#cb41-692"></a><span class="in">```{r umapPlot}</span></span>
 <span id="cb41-693"><a href="#cb41-693"></a></span>
-<span id="cb41-694"><a href="#cb41-694"></a><span class="in">```</span></span>
+<span id="cb41-694"><a href="#cb41-694"></a>res <span class="ot">=</span> <span class="fl">0.5</span></span>
 <span id="cb41-695"><a href="#cb41-695"></a></span>
-<span id="cb41-696"><a href="#cb41-696"></a><span class="fu">### Cluster stability: Generating a cluster tree</span></span>
-<span id="cb41-697"><a href="#cb41-697"></a></span>
-<span id="cb41-698"><a href="#cb41-698"></a>In what follows, we will visualize clusters and cluster stability using</span>
-<span id="cb41-699"><a href="#cb41-699"></a>a so called clustering tree as implemented by the <span class="in">`clustree`</span> package in</span>
-<span id="cb41-700"><a href="#cb41-700"></a>R. In general, clustering analyses are mainly used to group similar</span>
-<span id="cb41-701"><a href="#cb41-701"></a>samples. The most challenging choice is often the number of clusters to</span>
-<span id="cb41-702"><a href="#cb41-702"></a>use. This is usually a priori controlled by a parameter provided to the</span>
-<span id="cb41-703"><a href="#cb41-703"></a>clustering algorithm, such as *k* for *k*-means clustering.</span>
+<span id="cb41-696"><a href="#cb41-696"></a><span class="fu">DimPlot</span>(<span class="at">object =</span> seu.s, <span class="at">pt.size =</span> <span class="fl">0.5</span>, </span>
+<span id="cb41-697"><a href="#cb41-697"></a>            <span class="at">group.by =</span> <span class="fu">paste0</span>(<span class="st">&quot;ATAC_snn_res.&quot;</span>,res),</span>
+<span id="cb41-698"><a href="#cb41-698"></a>            <span class="at">label =</span> <span class="cn">TRUE</span>, <span class="at">repel =</span> <span class="cn">TRUE</span>, <span class="at">label.box =</span> <span class="cn">TRUE</span>) </span>
+<span id="cb41-699"><a href="#cb41-699"></a></span>
+<span id="cb41-700"><a href="#cb41-700"></a></span>
+<span id="cb41-701"><a href="#cb41-701"></a><span class="in">```</span></span>
+<span id="cb41-702"><a href="#cb41-702"></a></span>
+<span id="cb41-703"><a href="#cb41-703"></a><span class="fu">### Cluster stability: Generating a cluster tree</span></span>
 <span id="cb41-704"><a href="#cb41-704"></a></span>
-<span id="cb41-705"><a href="#cb41-705"></a>Statistics designed to help you make this choice typically either</span>
-<span id="cb41-706"><a href="#cb41-706"></a>compare two clusterings or score a single clustering. A clustering tree</span>
-<span id="cb41-707"><a href="#cb41-707"></a>is different in that it visualises the relationships between at a range</span>
-<span id="cb41-708"><a href="#cb41-708"></a>of resolutions.</span>
-<span id="cb41-709"><a href="#cb41-709"></a></span>
-<span id="cb41-710"><a href="#cb41-710"></a>To do so, we need to look at how cells move as the clustering resolution</span>
-<span id="cb41-711"><a href="#cb41-711"></a>is increased. Each cluster forms a node in the tree and edges are</span>
-<span id="cb41-712"><a href="#cb41-712"></a>constructed by considering the cells in a cluster at a lower resolution</span>
-<span id="cb41-713"><a href="#cb41-713"></a>(say *k*=2) that end up in a cluster at the next highest resolution (say</span>
-<span id="cb41-714"><a href="#cb41-714"></a>*k*=3). By connecting clusters in this way we can see how clusters are</span>
-<span id="cb41-715"><a href="#cb41-715"></a>related to each other, which are clearly distinct and which are</span>
-<span id="cb41-716"><a href="#cb41-716"></a>unstable.</span>
-<span id="cb41-717"><a href="#cb41-717"></a></span>
-<span id="cb41-718"><a href="#cb41-718"></a>Let&#39;s try this approach out to get a better understanding of our</span>
-<span id="cb41-719"><a href="#cb41-719"></a>clusters here! First, we need to calculate different clusterings with</span>
-<span id="cb41-720"><a href="#cb41-720"></a>varying resolutions, which can be done via the <span class="in">`resolution`</span> parameter in</span>
-<span id="cb41-721"><a href="#cb41-721"></a>the <span class="in">`FindClusters`</span> function.</span>
-<span id="cb41-722"><a href="#cb41-722"></a></span>
-<span id="cb41-723"><a href="#cb41-723"></a><span class="in">```{r clusters1}</span></span>
-<span id="cb41-724"><a href="#cb41-724"></a>clusters_alg <span class="ot">=</span> <span class="dv">1</span></span>
-<span id="cb41-725"><a href="#cb41-725"></a><span class="cf">for</span> (res <span class="cf">in</span> <span class="fu">seq</span>(<span class="fl">0.5</span>,<span class="fl">1.6</span>,<span class="fl">0.2</span>)){</span>
-<span id="cb41-726"><a href="#cb41-726"></a>  <span class="co"># In each iteration, a new metadata is added to the Seurat object with the basename ATAC_snn</span></span>
-<span id="cb41-727"><a href="#cb41-727"></a>  seu.s <span class="ot">=</span> <span class="fu">FindClusters</span>(seu.s, <span class="at">resolution =</span> res, <span class="at">algorithm =</span> clusters_alg, </span>
-<span id="cb41-728"><a href="#cb41-728"></a>                       <span class="at">graph.name =</span> <span class="st">&quot;ATAC_snn&quot;</span>, <span class="at">verbose =</span> <span class="cn">FALSE</span>)</span>
-<span id="cb41-729"><a href="#cb41-729"></a>}</span>
-<span id="cb41-730"><a href="#cb41-730"></a><span class="in">```</span></span>
-<span id="cb41-731"><a href="#cb41-731"></a></span>
-<span id="cb41-732"><a href="#cb41-732"></a>We are now ready to plot our cluster tree!</span>
-<span id="cb41-733"><a href="#cb41-733"></a></span>
-<span id="cb41-734"><a href="#cb41-734"></a><span class="in">```{r clustree, fig.height=8}</span></span>
-<span id="cb41-735"><a href="#cb41-735"></a><span class="fu">clustree</span>(seu.s)</span>
-<span id="cb41-736"><a href="#cb41-736"></a><span class="in">```</span></span>
-<span id="cb41-737"><a href="#cb41-737"></a></span>
-<span id="cb41-738"><a href="#cb41-738"></a>Lastly, we need to rerun <span class="in">`FindClusters`</span> one last time to make sure we use the 0.5 resolution (that we had in the object before but that was overwritten by our code chunk to prepare the <span class="in">`clustree`</span> function) for all subsequent analysis:</span>
-<span id="cb41-739"><a href="#cb41-739"></a></span>
-<span id="cb41-740"><a href="#cb41-740"></a><span class="in">```{r rerunFindCLusters}</span></span>
-<span id="cb41-741"><a href="#cb41-741"></a><span class="co"># Let&#39;s make sure the 0.5 resolution is the one that we keep for further analyses, </span></span>
-<span id="cb41-742"><a href="#cb41-742"></a><span class="co"># not the last one (1.5) from the chunk above</span></span>
-<span id="cb41-743"><a href="#cb41-743"></a>seu.s <span class="ot">=</span> <span class="fu">FindClusters</span>(seu.s, <span class="at">resolution =</span> <span class="fl">0.5</span>, <span class="at">algorithm =</span> <span class="dv">1</span>, <span class="at">graph.name =</span> <span class="st">&quot;ATAC_snn&quot;</span>, <span class="at">verbose =</span> <span class="cn">FALSE</span>)</span>
-<span id="cb41-744"><a href="#cb41-744"></a><span class="in">```</span></span>
-<span id="cb41-745"><a href="#cb41-745"></a></span>
+<span id="cb41-705"><a href="#cb41-705"></a>In what follows, we will visualize clusters and cluster stability using</span>
+<span id="cb41-706"><a href="#cb41-706"></a>a so called clustering tree as implemented by the <span class="in">`clustree`</span> package in</span>
+<span id="cb41-707"><a href="#cb41-707"></a>R. In general, clustering analyses are mainly used to group similar</span>
+<span id="cb41-708"><a href="#cb41-708"></a>samples. The most challenging choice is often the number of clusters to</span>
+<span id="cb41-709"><a href="#cb41-709"></a>use. This is usually a priori controlled by a parameter provided to the</span>
+<span id="cb41-710"><a href="#cb41-710"></a>clustering algorithm, such as *k* for *k*-means clustering.</span>
+<span id="cb41-711"><a href="#cb41-711"></a></span>
+<span id="cb41-712"><a href="#cb41-712"></a>Statistics designed to help you make this choice typically either</span>
+<span id="cb41-713"><a href="#cb41-713"></a>compare two clusterings or score a single clustering. A clustering tree</span>
+<span id="cb41-714"><a href="#cb41-714"></a>is different in that it visualises the relationships between at a range</span>
+<span id="cb41-715"><a href="#cb41-715"></a>of resolutions.</span>
+<span id="cb41-716"><a href="#cb41-716"></a></span>
+<span id="cb41-717"><a href="#cb41-717"></a>To do so, we need to look at how cells move as the clustering resolution</span>
+<span id="cb41-718"><a href="#cb41-718"></a>is increased. Each cluster forms a node in the tree and edges are</span>
+<span id="cb41-719"><a href="#cb41-719"></a>constructed by considering the cells in a cluster at a lower resolution</span>
+<span id="cb41-720"><a href="#cb41-720"></a>(say *k*=2) that end up in a cluster at the next highest resolution (say</span>
+<span id="cb41-721"><a href="#cb41-721"></a>*k*=3). By connecting clusters in this way we can see how clusters are</span>
+<span id="cb41-722"><a href="#cb41-722"></a>related to each other, which are clearly distinct and which are</span>
+<span id="cb41-723"><a href="#cb41-723"></a>unstable.</span>
+<span id="cb41-724"><a href="#cb41-724"></a></span>
+<span id="cb41-725"><a href="#cb41-725"></a>Let&#39;s try this approach out to get a better understanding of our</span>
+<span id="cb41-726"><a href="#cb41-726"></a>clusters here! First, we need to calculate different clusterings with</span>
+<span id="cb41-727"><a href="#cb41-727"></a>varying resolutions, which can be done via the <span class="in">`resolution`</span> parameter in</span>
+<span id="cb41-728"><a href="#cb41-728"></a>the <span class="in">`FindClusters`</span> function.</span>
+<span id="cb41-729"><a href="#cb41-729"></a></span>
+<span id="cb41-730"><a href="#cb41-730"></a><span class="in">```{r clusters1}</span></span>
+<span id="cb41-731"><a href="#cb41-731"></a>clusters_alg <span class="ot">=</span> <span class="dv">1</span></span>
+<span id="cb41-732"><a href="#cb41-732"></a><span class="cf">for</span> (res <span class="cf">in</span> <span class="fu">seq</span>(<span class="fl">0.5</span>,<span class="fl">1.6</span>,<span class="fl">0.2</span>)){</span>
+<span id="cb41-733"><a href="#cb41-733"></a>  <span class="co"># In each iteration, a new metadata is added to the Seurat object with the basename ATAC_snn</span></span>
+<span id="cb41-734"><a href="#cb41-734"></a>  seu.s <span class="ot">=</span> <span class="fu">FindClusters</span>(seu.s, <span class="at">resolution =</span> res, <span class="at">algorithm =</span> clusters_alg, </span>
+<span id="cb41-735"><a href="#cb41-735"></a>                       <span class="at">graph.name =</span> <span class="st">&quot;ATAC_snn&quot;</span>, <span class="at">verbose =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb41-736"><a href="#cb41-736"></a>}</span>
+<span id="cb41-737"><a href="#cb41-737"></a><span class="in">```</span></span>
+<span id="cb41-738"><a href="#cb41-738"></a></span>
+<span id="cb41-739"><a href="#cb41-739"></a>We are now ready to plot our cluster tree!</span>
+<span id="cb41-740"><a href="#cb41-740"></a></span>
+<span id="cb41-741"><a href="#cb41-741"></a><span class="in">```{r clustree, fig.height=8}</span></span>
+<span id="cb41-742"><a href="#cb41-742"></a><span class="fu">clustree</span>(seu.s)</span>
+<span id="cb41-743"><a href="#cb41-743"></a><span class="in">```</span></span>
+<span id="cb41-744"><a href="#cb41-744"></a></span>
+<span id="cb41-745"><a href="#cb41-745"></a>Lastly, we need to rerun <span class="in">`FindClusters`</span> one last time to make sure we use the 0.5 resolution (that we had in the object before but that was overwritten by our code chunk to prepare the <span class="in">`clustree`</span> function) for all subsequent analysis:</span>
 <span id="cb41-746"><a href="#cb41-746"></a></span>
-<span id="cb41-747"><a href="#cb41-747"></a><span class="fu">## Save filtered object to disk</span></span>
-<span id="cb41-748"><a href="#cb41-748"></a></span>
-<span id="cb41-749"><a href="#cb41-749"></a>We reached the end of the first vignette and the first set of analyses.</span>
-<span id="cb41-750"><a href="#cb41-750"></a>Finally, we can now save our filtered Seurat object to disk, in analogy</span>
-<span id="cb41-751"><a href="#cb41-751"></a>to what we did above with the original, unfiltered <span class="in">`Seurat`</span> object.</span>
+<span id="cb41-747"><a href="#cb41-747"></a><span class="in">```{r rerunFindCLusters}</span></span>
+<span id="cb41-748"><a href="#cb41-748"></a><span class="co"># Let&#39;s make sure the 0.5 resolution is the one that we keep for further analyses, </span></span>
+<span id="cb41-749"><a href="#cb41-749"></a><span class="co"># not the last one (1.5) from the chunk above</span></span>
+<span id="cb41-750"><a href="#cb41-750"></a>seu.s <span class="ot">=</span> <span class="fu">FindClusters</span>(seu.s, <span class="at">resolution =</span> <span class="fl">0.5</span>, <span class="at">algorithm =</span> <span class="dv">1</span>, <span class="at">graph.name =</span> <span class="st">&quot;ATAC_snn&quot;</span>, <span class="at">verbose =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb41-751"><a href="#cb41-751"></a><span class="in">```</span></span>
 <span id="cb41-752"><a href="#cb41-752"></a></span>
-<span id="cb41-753"><a href="#cb41-753"></a><span class="in">```{r saveObject2}</span></span>
-<span id="cb41-754"><a href="#cb41-754"></a><span class="fu">saveRDS</span>(seu.s, <span class="at">file =</span> <span class="fu">paste0</span>(outFolder,<span class="st">&quot;obj.filt.rds&quot;</span>))</span>
-<span id="cb41-755"><a href="#cb41-755"></a><span class="in">```</span></span>
-<span id="cb41-756"><a href="#cb41-756"></a></span>
-<span id="cb41-757"><a href="#cb41-757"></a><span class="fu">## Further reading</span></span>
-<span id="cb41-758"><a href="#cb41-758"></a></span>
-<span id="cb41-759"><a href="#cb41-759"></a><span class="co">[</span><span class="ot">10x Genomics: What is Cell Ranger ATAC?</span><span class="co">](https://support.10xgenomics.com/single-cell-atac/software/pipelines/latest/what-is-cell-ranger-atac)</span></span>
-<span id="cb41-760"><a href="#cb41-760"></a></span>
-<span id="cb41-761"><a href="#cb41-761"></a><span class="co">[</span><span class="ot">scATAC-seq data analysis tools and papers</span><span class="co">](https://github.com/mdozmorov/scATAC-seq_notes)</span></span>
-<span id="cb41-762"><a href="#cb41-762"></a></span>
-<span id="cb41-763"><a href="#cb41-763"></a><span class="co">[</span><span class="ot">Beginner’s Guide to Understanding Single-Cell ATAC-Seq</span><span class="co">](https://www.activemotif.com/blog-single-cell-atac-seq)</span></span>
-<span id="cb41-764"><a href="#cb41-764"></a></span>
-<span id="cb41-765"><a href="#cb41-765"></a><span class="co">[</span><span class="ot">scATAC.Explorer: A Collection of Single-cell ATAC Sequencing Datasets and Corresponding Metadata for R/Bioconductor</span><span class="co">](https://bioconductor.org/packages/release/data/experiment/html/scATAC.Explorer.html)</span></span>
-<span id="cb41-766"><a href="#cb41-766"></a></span>
-<span id="cb41-767"><a href="#cb41-767"></a><span class="co">[</span><span class="ot">ShinyArchR.UiO: user-friendly,integrative and open-source tool for visualization of single-cell ATAC-seq data using ArchR</span><span class="co">](https://academic.oup.com/bioinformatics/article/38/3/834/6377776)</span></span>
-<span id="cb41-768"><a href="#cb41-768"></a></span>
-<span id="cb41-769"><a href="#cb41-769"></a><span class="co">[</span><span class="ot">Efficient pre-processing of Single-cell ATAC-seq data</span><span class="co">](https://www.biorxiv.org/content/10.1101/2021.12.08.471788v1)</span></span>
-<span id="cb41-770"><a href="#cb41-770"></a></span>
-<span id="cb41-771"><a href="#cb41-771"></a><span class="co">[</span><span class="ot">Dimensionality Reduction for scATAC Data</span><span class="co">](http://andrewjohnhill.com/blog/2019/05/06/dimensionality-reduction-for-scatac-data/)</span></span>
-<span id="cb41-772"><a href="#cb41-772"></a></span>
-<span id="cb41-773"><a href="#cb41-773"></a><span class="co">[</span><span class="ot">CellWalkR: R package for integrating and visualizing single-cell and bulk data to resolve regulatory elements</span><span class="co">](https://academic.oup.com/bioinformatics/article/38/9/2621/6547050)</span></span>
-<span id="cb41-774"><a href="#cb41-774"></a></span>
-<span id="cb41-775"><a href="#cb41-775"></a><span class="co">[</span><span class="ot">scDblFinder R package for doublet detection</span><span class="co">](https://bioconductor.org/packages/release/bioc/vignettes/scDblFinder)</span></span>
-<span id="cb41-776"><a href="#cb41-776"></a></span>
-<span id="cb41-777"><a href="#cb41-777"></a><span class="co">[</span><span class="ot">Grandi, F.C., Modi, H., Kampman, L. and Corces, M.R., 2022. Chromatin accessibility profiling by ATAC-seq. Nature Protocols, pp.1-35.</span><span class="co">](https://www.nature.com/articles/s41596-022-00692-9)</span></span>
-<span id="cb41-778"><a href="#cb41-778"></a><span class="co">[</span><span class="ot">2</span><span class="co">] [Yu, W., Uzun, Y., Zhu, Q., Chen, C. and Tan, K., 2020. scATAC-pro: a comprehensive workbench for single-cell chromatin accessibility sequencing data. Genome biology, 21(1), pp.1-17.]</span>(https://genomebiology.biomedcentral.com/track/pdf/10.1186/s13059-020-02008-0.pdf)</span>
+<span id="cb41-753"><a href="#cb41-753"></a></span>
+<span id="cb41-754"><a href="#cb41-754"></a><span class="fu">## Save filtered object to disk</span></span>
+<span id="cb41-755"><a href="#cb41-755"></a></span>
+<span id="cb41-756"><a href="#cb41-756"></a>We reached the end of the first vignette and the first set of analyses.</span>
+<span id="cb41-757"><a href="#cb41-757"></a>Finally, we can now save our filtered Seurat object to disk, in analogy</span>
+<span id="cb41-758"><a href="#cb41-758"></a>to what we did above with the original, unfiltered <span class="in">`Seurat`</span> object.</span>
+<span id="cb41-759"><a href="#cb41-759"></a></span>
+<span id="cb41-760"><a href="#cb41-760"></a><span class="in">```{r saveObject2}</span></span>
+<span id="cb41-761"><a href="#cb41-761"></a><span class="fu">saveRDS</span>(seu.s, <span class="at">file =</span> <span class="fu">paste0</span>(outFolder,<span class="st">&quot;obj.filt.rds&quot;</span>))</span>
+<span id="cb41-762"><a href="#cb41-762"></a><span class="in">```</span></span>
+<span id="cb41-763"><a href="#cb41-763"></a></span>
+<span id="cb41-764"><a href="#cb41-764"></a><span class="fu">## Further reading</span></span>
+<span id="cb41-765"><a href="#cb41-765"></a></span>
+<span id="cb41-766"><a href="#cb41-766"></a><span class="co">[</span><span class="ot">10x Genomics: What is Cell Ranger ATAC?</span><span class="co">](https://support.10xgenomics.com/single-cell-atac/software/pipelines/latest/what-is-cell-ranger-atac)</span></span>
+<span id="cb41-767"><a href="#cb41-767"></a></span>
+<span id="cb41-768"><a href="#cb41-768"></a><span class="co">[</span><span class="ot">scATAC-seq data analysis tools and papers</span><span class="co">](https://github.com/mdozmorov/scATAC-seq_notes)</span></span>
+<span id="cb41-769"><a href="#cb41-769"></a></span>
+<span id="cb41-770"><a href="#cb41-770"></a><span class="co">[</span><span class="ot">Beginner’s Guide to Understanding Single-Cell ATAC-Seq</span><span class="co">](https://www.activemotif.com/blog-single-cell-atac-seq)</span></span>
+<span id="cb41-771"><a href="#cb41-771"></a></span>
+<span id="cb41-772"><a href="#cb41-772"></a><span class="co">[</span><span class="ot">scATAC.Explorer: A Collection of Single-cell ATAC Sequencing Datasets and Corresponding Metadata for R/Bioconductor</span><span class="co">](https://bioconductor.org/packages/release/data/experiment/html/scATAC.Explorer.html)</span></span>
+<span id="cb41-773"><a href="#cb41-773"></a></span>
+<span id="cb41-774"><a href="#cb41-774"></a><span class="co">[</span><span class="ot">ShinyArchR.UiO: user-friendly,integrative and open-source tool for visualization of single-cell ATAC-seq data using ArchR</span><span class="co">](https://academic.oup.com/bioinformatics/article/38/3/834/6377776)</span></span>
+<span id="cb41-775"><a href="#cb41-775"></a></span>
+<span id="cb41-776"><a href="#cb41-776"></a><span class="co">[</span><span class="ot">Efficient pre-processing of Single-cell ATAC-seq data</span><span class="co">](https://www.biorxiv.org/content/10.1101/2021.12.08.471788v1)</span></span>
+<span id="cb41-777"><a href="#cb41-777"></a></span>
+<span id="cb41-778"><a href="#cb41-778"></a><span class="co">[</span><span class="ot">Dimensionality Reduction for scATAC Data</span><span class="co">](http://andrewjohnhill.com/blog/2019/05/06/dimensionality-reduction-for-scatac-data/)</span></span>
 <span id="cb41-779"><a href="#cb41-779"></a></span>
-<span id="cb41-780"><a href="#cb41-780"></a><span class="co">[</span><span class="ot">Granja, J.M., Corces, M.R., Pierce, S.E., Bagdatli, S.T., Choudhry, H., Chang, H.Y. and Greenleaf, W.J., 2021. ArchR is a scalable software package for integrative single-cell chromatin accessibility analysis. Nature genetics, 53(3), pp.403-411.</span><span class="co">](https://www.nature.com/articles/s41588-021-00790-6)</span></span>
+<span id="cb41-780"><a href="#cb41-780"></a><span class="co">[</span><span class="ot">CellWalkR: R package for integrating and visualizing single-cell and bulk data to resolve regulatory elements</span><span class="co">](https://academic.oup.com/bioinformatics/article/38/9/2621/6547050)</span></span>
 <span id="cb41-781"><a href="#cb41-781"></a></span>
-<span id="cb41-782"><a href="#cb41-782"></a><span class="co">[</span><span class="ot">Hao, Y., Hao, S., Andersen-Nissen, E., Mauck III, W.M., Zheng, S., Butler, A., Lee, M.J., Wilk, A.J., Darby, C., Zager, M. and Hoffman, P., 2021. Integrated analysis of multimodal single-cell data. Cell, 184(13), pp.3573-3587.</span><span class="co">](https://www.sciencedirect.com/science/article/pii/S0092867421005833)</span></span>
+<span id="cb41-782"><a href="#cb41-782"></a><span class="co">[</span><span class="ot">scDblFinder R package for doublet detection</span><span class="co">](https://bioconductor.org/packages/release/bioc/vignettes/scDblFinder)</span></span>
 <span id="cb41-783"><a href="#cb41-783"></a></span>
-<span id="cb41-784"><a href="#cb41-784"></a><span class="co">[</span><span class="ot">Ji, Z., Zhou, W., Hou, W. and Ji, H., 2020. Single-cell ATAC-seq signal extraction and enhancement with SCATE. Genome biology, 21(1), pp.1-36.</span><span class="co">](https://genomebiology.biomedcentral.com/articles/10.1186/s13059-020-02075-3)</span></span>
-<span id="cb41-785"><a href="#cb41-785"></a></span>
-<span id="cb41-786"><a href="#cb41-786"></a><span class="co">[</span><span class="ot">Baek, S. and Lee, I., 2020. Single-cell ATAC sequencing analysis: From data preprocessing to hypothesis generation. Computational and structural biotechnology journal, 18, pp.1429-1439.</span><span class="co">](https://www.sciencedirect.com/science/article/pii/S2001037020303019)</span></span>
-<span id="cb41-787"><a href="#cb41-787"></a></span>
-<span id="cb41-788"><a href="#cb41-788"></a><span class="co">[</span><span class="ot">A single-cell atlas of chromatin accessibility in the human genome</span><span class="co">]</span>(https://www.cell.com/cell/pdf/S0092-8674(21)01279-4.pdf)</span>
-<span id="cb41-789"><a href="#cb41-789"></a></span>
-<span id="cb41-790"><a href="#cb41-790"></a><span class="co">[</span><span class="ot">Comprehensive analysis of single cell ATAC-seq data with SnapATAC</span><span class="co">](https://www.nature.com/articles/s41467-021-21583-9)</span></span>
-<span id="cb41-791"><a href="#cb41-791"></a></span>
-<span id="cb41-792"><a href="#cb41-792"></a><span class="co">[</span><span class="ot">Interesting blog post regarding normalization and dimensionality reduction of scATAC data</span><span class="co">](http://andrewjohnhill.com/blog/2019/05/06/dimensionality-reduction-for-scatac-data/)</span></span>
-<span id="cb41-793"><a href="#cb41-793"></a></span>
-<span id="cb41-794"><a href="#cb41-794"></a><span class="fu">## Session info</span></span>
-<span id="cb41-795"><a href="#cb41-795"></a></span>
-<span id="cb41-796"><a href="#cb41-796"></a>It is good practice to print the so-called session info at the end of an</span>
-<span id="cb41-797"><a href="#cb41-797"></a>R script, which prints all loaded libraries, their versions etc. This</span>
-<span id="cb41-798"><a href="#cb41-798"></a>can be helpful for reproducibility and recapitulating which package</span>
-<span id="cb41-799"><a href="#cb41-799"></a>versions have been used to produce the results obtained above.</span>
+<span id="cb41-784"><a href="#cb41-784"></a><span class="co">[</span><span class="ot">Grandi, F.C., Modi, H., Kampman, L. and Corces, M.R., 2022. Chromatin accessibility profiling by ATAC-seq. Nature Protocols, pp.1-35.</span><span class="co">](https://www.nature.com/articles/s41596-022-00692-9)</span></span>
+<span id="cb41-785"><a href="#cb41-785"></a><span class="co">[</span><span class="ot">2</span><span class="co">] [Yu, W., Uzun, Y., Zhu, Q., Chen, C. and Tan, K., 2020. scATAC-pro: a comprehensive workbench for single-cell chromatin accessibility sequencing data. Genome biology, 21(1), pp.1-17.]</span>(https://genomebiology.biomedcentral.com/track/pdf/10.1186/s13059-020-02008-0.pdf)</span>
+<span id="cb41-786"><a href="#cb41-786"></a></span>
+<span id="cb41-787"><a href="#cb41-787"></a><span class="co">[</span><span class="ot">Granja, J.M., Corces, M.R., Pierce, S.E., Bagdatli, S.T., Choudhry, H., Chang, H.Y. and Greenleaf, W.J., 2021. ArchR is a scalable software package for integrative single-cell chromatin accessibility analysis. Nature genetics, 53(3), pp.403-411.</span><span class="co">](https://www.nature.com/articles/s41588-021-00790-6)</span></span>
+<span id="cb41-788"><a href="#cb41-788"></a></span>
+<span id="cb41-789"><a href="#cb41-789"></a><span class="co">[</span><span class="ot">Hao, Y., Hao, S., Andersen-Nissen, E., Mauck III, W.M., Zheng, S., Butler, A., Lee, M.J., Wilk, A.J., Darby, C., Zager, M. and Hoffman, P., 2021. Integrated analysis of multimodal single-cell data. Cell, 184(13), pp.3573-3587.</span><span class="co">](https://www.sciencedirect.com/science/article/pii/S0092867421005833)</span></span>
+<span id="cb41-790"><a href="#cb41-790"></a></span>
+<span id="cb41-791"><a href="#cb41-791"></a><span class="co">[</span><span class="ot">Ji, Z., Zhou, W., Hou, W. and Ji, H., 2020. Single-cell ATAC-seq signal extraction and enhancement with SCATE. Genome biology, 21(1), pp.1-36.</span><span class="co">](https://genomebiology.biomedcentral.com/articles/10.1186/s13059-020-02075-3)</span></span>
+<span id="cb41-792"><a href="#cb41-792"></a></span>
+<span id="cb41-793"><a href="#cb41-793"></a><span class="co">[</span><span class="ot">Baek, S. and Lee, I., 2020. Single-cell ATAC sequencing analysis: From data preprocessing to hypothesis generation. Computational and structural biotechnology journal, 18, pp.1429-1439.</span><span class="co">](https://www.sciencedirect.com/science/article/pii/S2001037020303019)</span></span>
+<span id="cb41-794"><a href="#cb41-794"></a></span>
+<span id="cb41-795"><a href="#cb41-795"></a><span class="co">[</span><span class="ot">A single-cell atlas of chromatin accessibility in the human genome</span><span class="co">]</span>(https://www.cell.com/cell/pdf/S0092-8674(21)01279-4.pdf)</span>
+<span id="cb41-796"><a href="#cb41-796"></a></span>
+<span id="cb41-797"><a href="#cb41-797"></a><span class="co">[</span><span class="ot">Comprehensive analysis of single cell ATAC-seq data with SnapATAC</span><span class="co">](https://www.nature.com/articles/s41467-021-21583-9)</span></span>
+<span id="cb41-798"><a href="#cb41-798"></a></span>
+<span id="cb41-799"><a href="#cb41-799"></a><span class="co">[</span><span class="ot">Interesting blog post regarding normalization and dimensionality reduction of scATAC data</span><span class="co">](http://andrewjohnhill.com/blog/2019/05/06/dimensionality-reduction-for-scatac-data/)</span></span>
 <span id="cb41-800"><a href="#cb41-800"></a></span>
-<span id="cb41-801"><a href="#cb41-801"></a><span class="in">```{r sessionInfo}</span></span>
-<span id="cb41-802"><a href="#cb41-802"></a><span class="fu">sessionInfo</span>()</span>
-<span id="cb41-803"><a href="#cb41-803"></a><span class="in">```</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb41-801"><a href="#cb41-801"></a><span class="fu">## Session info</span></span>
+<span id="cb41-802"><a href="#cb41-802"></a></span>
+<span id="cb41-803"><a href="#cb41-803"></a>It is good practice to print the so-called session info at the end of an</span>
+<span id="cb41-804"><a href="#cb41-804"></a>R script, which prints all loaded libraries, their versions etc. This</span>
+<span id="cb41-805"><a href="#cb41-805"></a>can be helpful for reproducibility and recapitulating which package</span>
+<span id="cb41-806"><a href="#cb41-806"></a>versions have been used to produce the results obtained above.</span>
+<span id="cb41-807"><a href="#cb41-807"></a></span>
+<span id="cb41-808"><a href="#cb41-808"></a><span class="in">```{r sessionInfo}</span></span>
+<span id="cb41-809"><a href="#cb41-809"></a><span class="fu">sessionInfo</span>()</span>
+<span id="cb41-810"><a href="#cb41-810"></a><span class="in">```</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div></div></div></div></div>
 </div> <!-- /content -->
 
