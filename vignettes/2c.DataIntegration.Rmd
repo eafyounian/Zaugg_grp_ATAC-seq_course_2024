@@ -29,8 +29,8 @@ single-cell chromatin data. This is a common task that arises in cases when:
 
 ## References
 
-This vignette is a based on [this](https://satijalab.org/signac/articles/integrate_atac.html) 
-and [this](https://satijalab.org/signac/articles/merging.html) vignettes for 
+This vignette is a based on [this](https://stuartlab.org/signac/articles/integrate_atac.html) 
+and [this](https://stuartlab.org/signac/articles/merging.html) vignettes for 
 the Signac package with some explanations borrowed from the
 [ArchR documentation](https://www.archrproject.com/bookdown/).
 

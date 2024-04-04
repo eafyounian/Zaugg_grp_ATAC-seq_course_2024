@@ -28,7 +28,7 @@ This vignette will teach you how to quantify the activity of each gene in the ge
 ## References
 
 This vignette contains a modified version of [this
-vignette](https://satijalab.org/signac/articles/pbmc_vignette.html).
+vignette](https://stuartlab.org/signac/articles/pbmc_vignette.html).
 
 
 ## Load libraries 

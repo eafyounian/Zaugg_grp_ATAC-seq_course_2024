@@ -28,7 +28,7 @@ This vignette will teach you how to read the processed 10x data into R and `Seur
 ## References
 
 This vignette is a modified version of [this
-vignette](https://satijalab.org/signac/articles/pbmc_vignette.html),
+vignette](https://stuartlab.org/signac/articles/pbmc_vignette.html),
 with modified descriptions from [the ArchR
 website](https://www.archrproject.com/bookdown/dimensionality-reduction-with-archr.html) as well as the [clustree vignette](https://cran.r-project.org/web/packages/clustree/vignettes/clustree.html).
 
