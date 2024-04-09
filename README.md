@@ -6,16 +6,9 @@
 
 ## Talks
 
--   [x] [Judith Zaugg: (Single cell) ATAC-seq: Overview, Opportunities, Challenges, Gene Regulatory Networks](presentations/2022-05-10_ATAC-seq_Lecture_Judith.pdf)
--   [x] [Vladimir Benes: For sequencing today tomorrow never dies...](presentations/NGS-overview-ATAC-course-May-2022.pdf)
--   [x] [Umut Yildiz: High-throughput scATAC-seq for complex perturbation screens](presentations/220511_ATAC_course_talk_UY.pptx)
--   [x] [Ulrike Litzenburger: Getting started with scATACseq](presentations/Introduction%20to%20Practical%20ATACseq%20course%202022_D.pdf)
--   [x] [Ulrike Litzenburger:Single cell ATACseq detecting epigenetic heterogeneity](presentations/Ulrike%20Litzenburger_singleCellATACseq.pdf)
--   [x] [Maksim Kholmatov: Introduction to Linux](presentations/intro_to_linux_Max.pdf)
--   [x] [Christian Arnold: Bulk ATAC-Seq processing](presentations/ATAC-Seq_Processing_Christian.pdf)
--   [x] [Christian Arnold: Bioinformatic Workflow Managers: Snakemake](presentations/Snakemake_Christian.pdf)
--   [x] [Christian Arnold: Cell Ranger ATAC Introduction and QC](presentations/CellRanger.pdf)
--   [x] [Ivan Berest: Overview of single-cell ATAC computational tools](presentations/ATAC2022_IvanBerest.pdf)
+-   [x] [Cyndie Forestier – Element Biosciences - Aviti introduction](presentations/ElementBiosciences_Aviti_Introduction.pdf)
+
+Other presentations coming soon
 
 ## Protocols
 
@@ -33,6 +26,7 @@
     -   [x] [Sample 6](https://www.embl.de/download/zaugg/atac2024/raw/lane1g6.tar)
     -   [x] [Sample 7](https://www.embl.de/download/zaugg/atac2022/raw/lane1g7.tar)
     -   [x] [Sample 8](https://www.embl.de/download/zaugg/atac2024/raw/lane1g8.tar)
+    -   [x] [Sample 9](https://www.embl.de/download/zaugg/atac2024/raw/lane1g9.tar)
 -   [x] [Bioanalyzer traces and a brief summary of the lab experiments](results/Bioanalyzer)
 -   [x] [Cell Ranger ATAC web summary reports for all samples](results/cellranger)
 -   (Selected) Cell Ranger ATAC output, per sample (time-limited download) (as input for the R part)
@@ -44,7 +38,8 @@
     -   [x] [Sample 6](https://www.embl.de/download/zaugg/atac2024/cellranger/sample6.tar)
     -   [x] [Sample 7](https://www.embl.de/download/zaugg/atac2024/cellranger/sample7.tar)
     -   [x] [Sample 8](https://www.embl.de/download/zaugg/atac2024/cellranger/sample8.tar)
-
+    -   [x] [Sample 9](https://www.embl.de/download/zaugg/atac2024/cellranger/sample9.tar)
+    
 ## Scripts
 
 -   [x] [Running CellRanger ATAC](src/cellranger/runCellRanger.sh)
@@ -53,13 +48,13 @@
 
 Links to the HTML versions of the vignettes, both PDF and original R markdown versions are also available in this repository.
 
--   [x] [Introduction into R](vignettes/IntroR.html)
--   [x] [Import into R, initial Signac QC and clustering](vignettes/QClustering.html)
--   [x] [Gene activity](vignettes/GeneActivity.html)
--   [x] [TF activity, enrichment and TF footprint](vignettes/TFanalysis.html)
--   [x] [Data integration (batch effects between work groups)](vignettes/DataIntegration.html)
--   [x] [Cicero co-accessibility analysis](vignettes/Cicero.html)
--   [x] [Trajectory analysis with Monocle](vignettes/Monocle.html)
+-   [x] [Introduction into R](vignettes/0.IntroR.html)
+-   [x] [Import into R, initial Signac QC and clustering](vignettes/1.import_QC.html)
+-   [x] [Gene activity](vignettes/2a.GeneActivity.html)
+-   [x] [TF activity, enrichment and TF footprint](vignettes/2b.TFanalysis.html)
+-   [x] [Data integration (batch effects between work groups)](vignettes/2c.DataIntegration.html)
+-   [x] [Cicero co-accessibility analysis](vignettes/2d.Cicero.html)
+-   [x] [Trajectory analysis with Monocle](vignettes/3a.Monocle.html)
 
 ## Putting it all together: Quiz questions
 
