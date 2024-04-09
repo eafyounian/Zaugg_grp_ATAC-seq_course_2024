@@ -53,6 +53,3 @@ Links to the HTML versions of the vignettes, both PDF and original R markdown ve
 -   [x] [Cicero co-accessibility analysis](vignettes/2d.Cicero.html)
 -   [x] [Trajectory analysis with Monocle](vignettes/3a.Monocle.html)
 
-## Putting it all together: Quiz questions
-
--   [x] [Quiz questions](vignettes/ATAC-seq_course_Quiz_about_vignettes.pdf)
