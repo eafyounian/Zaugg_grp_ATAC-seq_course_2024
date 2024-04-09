@@ -62,8 +62,7 @@ subsequent vignettes.
 ```{r loadData}
 # Specify the path to the "outs" folder from cellranger-atac here 
 # Make sure to have a trailing slash here
-outFolder =" /mnt/data/cellranger/outs/"
-outFolder = "/g/zaugg/zaugg_shared/Courses_and_Teaching/ATAC-Seq_Course/2024/testdata/test_lifminus/outs/"
+outFolder="/mnt/data/cellranger/outs/"
 seu.s = readRDS(file = paste0(outFolder,"obj.filt.rds"))
 
 # Let's make sure we are working with correct clusters

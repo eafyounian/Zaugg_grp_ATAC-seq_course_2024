@@ -110,7 +110,6 @@ fragment file on disk in the Seurat object:
 # Specify the path to the "outs" folder from cellranger-atac here 
 # Make sure to have a trailing slash here
 outFolder="/mnt/data/cellranger/outs/"
-outFolder="/g/zaugg/zaugg_shared/Courses_and_Teaching/ATAC-Seq_Course/2024/testdata/test_lifminus/outs/"
 peakCounts <- Read10X_h5(filename = paste0(outFolder, "filtered_peak_bc_matrix.h5"))
 
 # The barcode metadata we also have to import
