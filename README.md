@@ -1,6 +1,6 @@
 # EMBL Course: Attacking open chromatin with ATAC sequencing (2024)
 
-[![Lifecycle: experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://www.tidyverse.org/lifecycle/#experimental) [![minimal R version](https://img.shields.io/badge/R%3E%253D-4.1.2-6666ff.svg)](https://cran.r-project.org/)
+[![Lifecycle: experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://www.tidyverse.org/lifecycle/#experimental) [![minimal R version](https://img.shields.io/badge/R%3E-4.3.3-6666ff.svg)](https://cran.r-project.org/)
 
 **Collected material from all contributors of the 2024 ATAC-Seq course**
 
