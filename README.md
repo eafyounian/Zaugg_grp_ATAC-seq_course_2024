@@ -40,9 +40,6 @@ Other presentations coming soon
     -   [x] [Sample 8](https://www.embl.de/download/zaugg/atac2024/cellranger/sample8.tar)
     -   [x] [Sample 9](https://www.embl.de/download/zaugg/atac2024/cellranger/sample9.tar)
     
-## Scripts
-
--   [x] [Running CellRanger ATAC](src/cellranger/runCellRanger.sh)
 
 ## Vignettes
 
