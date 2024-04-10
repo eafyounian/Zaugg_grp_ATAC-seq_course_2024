@@ -11,6 +11,10 @@
 -   [x] [Karin Prummel – Best practices for sample prep and nuclei isolation for (sc)ATAC-seq](presentations/20240408_presentation_sample-prep_nuclei-isolation_fixation.pdf)
 -   [x] [Kristy Ou – A multimodal approach to identify molecular drivers of follicular lymphoma transformation](presentations/epigenetic_changes_tFL_kou.pdf)
 -   [x] [Dirk Jürgensen (10x Genomics) - Sample Preparation for scATAC Assay: What are important factors (COMING SOON)](presentations/)
+-   [x] [Judith Zaugg - Overview of computational methods for integrating scATAC-Seq and scRNA-seq](presentations/2024-04-08_ATAC-seq_Lecture_Judith.pdf)
+-   [x] [Vladimir Benes - Sequencing technologies (COMING SOON)](presentations/)
+
+
 
 Other presentations coming soon
 
