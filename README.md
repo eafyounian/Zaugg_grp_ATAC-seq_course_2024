@@ -7,6 +7,10 @@
 ## Talks
 
 -   [x] [Cyndie Forestier – Element Biosciences - Aviti introduction](presentations/ElementBiosciences_Aviti_Introduction.pdf)
+-   [x] [Karin Prummel – Wetlab results: Pictures experimental part](presentations/20240408_wetlab-results.pdf)
+-   [x] [Karin Prummel – Best practices for sample prep and nuclei isolation for (sc)ATAC-seq](presentations/20240408_presentation_sample-prep_nuclei-isolation_fixation.pdf)
+-   [x] [Kristy Ou – A multimodal approach to identify molecular drivers of follicular lymphoma transformation](presentations/epigenetic_changes_tFL_kou.pdf)
+-   [x] [Dirk Jürgensen (10x Genomics) - Sample Preparation for scATAC Assay: What are important factors (COMING SOON)](presentations/)
 
 Other presentations coming soon
 
