@@ -24,13 +24,13 @@ single-cell chromatin data. This is a common task that arises in cases when:
 
 - You have too many cells to fit into a single lane of the 10x chip.
 - You produce libraries on multiple days.
-- You want to integrate your data with public datasets (to increase statistical 
-  power or improve cell type annotations).  
+- You want to integrate your data with public datasets (to increase statistical
+  power or improve cell type annotations).
 
 ## References
 
-This vignette is a based on [this](https://stuartlab.org/signac/articles/integrate_atac.html) 
-and [this](https://stuartlab.org/signac/articles/merging.html) vignettes for 
+This vignette is based on [this](https://stuartlab.org/signac/articles/integrate_atac.html)
+and [this](https://stuartlab.org/signac/articles/merging.html) vignettes for
 the Signac package with some explanations borrowed from the
 [ArchR documentation](https://www.archrproject.com/bookdown/).
 
@@ -66,7 +66,7 @@ library(future)
 })
 
 # parallelization parameters
-plan("multisession", workers = 8) # number of parallel workers for functions that support it
+plan("multisession", workers = 6) # number of parallel workers for functions that support it
 options(future.globals.maxSize = 40000 * 1024^2) # RAM limit of 40 Gb
 
 set.seed(1990)
@@ -77,47 +77,47 @@ set.seed(1990)
 ### Create consensus peak set
 
 When merging multiple single-cell chromatin datasets, it’s important to be
-aware that if peak calling was performed on each dataset independently, the 
-peaks are unlikely to be exactly the same. We therefore need to create a 
+aware that if peak calling was performed on each dataset independently, the
+peaks are unlikely to be exactly the same. We therefore need to create a
 common set of peaks across all the datasets to be merged.
 
-There are multiple ways to combine different peak sets with different pros 
+There are multiple ways to combine different peak sets with different pros
 and cons. Here is a couple of options:
 
--   **Raw peak overlap**: Raw peak overlap involves taking any peaks that 
-                          overlap each other and merging these into a single 
+-   **Raw peak overlap**: Raw peak overlap involves taking any peaks that
+                          overlap each other and merging these into a single
                           larger peak. In this scheme, daisy-chaining can
                           become a problem because peaks that don't directly
                           overlap each other get included in the same larger
                           peak because they are bridged by a shared internal
                           peak. Another problem with this type of approach is
-                          that, if you want to keep track of peak summits, 
-                          you are forced to either pick a single new summit 
-                          for each new merged peak or keep track of all of 
+                          that, if you want to keep track of peak summits,
+                          you are forced to either pick a single new summit
+                          for each new merged peak or keep track of all of
                           the summits that apply to each new merged peak.
 
 ![](DataIntegrationFiles/peakCalling_RawOverlap.png)
 
--   **Clustered Overlap**: Clustered overlap takes peaks that cluster together 
-                           and picks a single winner. This is done by keeping 
-                           the most significant peak in each cluster. This may 
+-   **Clustered Overlap**: Clustered overlap takes peaks that cluster together
+                           and picks a single winner. This is done by keeping
+                           the most significant peak in each cluster. This may
                            end up under-calling peaks and missing smaller peaks
                            located nearby.
 
 ![](DataIntegrationFiles/peakCalling_ClusteredOverlap.png)
 
 -   **Iterative Overlap**: [Iterative overlap removal](https://www.science.org/doi/10.1126/science.aav1898)
-                             is the method used 
+                             is the method used
                              in the
-                             [ArchR](https://www.archrproject.com/bookdown/the-iterative-overlap-peak-merging-procedure.html) 
-                             package. It avoids the issues 
-                             mentioned above. Peaks are first ranked by their 
-                             significance. The most significant peak is 
-                             retained and any peak that directly overlaps with 
+                             [ArchR](https://www.archrproject.com/bookdown/the-iterative-overlap-peak-merging-procedure.html)
+                             package. It avoids the issues
+                             mentioned above. Peaks are first ranked by their
+                             significance. The most significant peak is
+                             retained and any peak that directly overlaps with
                              the most significant peak is removed from further
-                             analysis. Then, of the remaining peaks, this 
+                             analysis. Then, of the remaining peaks, this
                              process is repeated until no more peaks exist.
-                             This avoids daisy-chaining and still allows for 
+                             This avoids daisy-chaining and still allows for
                              use of fixed-width peaks.
 
 ![](DataIntegrationFiles/peakCalling_IterativeOverlap.png)
@@ -129,11 +129,11 @@ Here is the comparisons of results of all 3 methods for the peaks from above.
 They all produce distinct sets of peaks, and the **Iterative Overlap** is
 argued by the authors of ArchR to be the most optimal. However in our analysis
 we will stick with the **Raw Overlap** method for the sake of simplicity and
-because it is still widely used. 
+because it is still widely used.
 
 
 To create a unified set of peaks we can use functions from the `GenomicRanges`
-package. The `reduce` function from `GenomicRanges` will merge all intersecting 
+package. The `reduce` function from `GenomicRanges` will merge all intersecting
 peaks.
 
 
@@ -152,12 +152,12 @@ peaks.1 = read.table(
   col.names = c("chr", "start", "end")
 )
 peaks.2 = read.table(
-  file = paste0(sample2Folder, "peaks.bed"), 
+  file = paste0(sample2Folder, "peaks.bed"),
   skip = 52,
   col.names = c("chr", "start", "end")
 )
 peaks.3 = read.table(
-  file = paste0(sample3Folder, "peaks.bed"), 
+  file = paste0(sample3Folder, "peaks.bed"),
   skip = 52,
   col.names = c("chr", "start", "end")
 )
@@ -165,7 +165,7 @@ peaks.3 = read.table(
 head(peaks.1)
 ```
 
-Now we can use these data.frames to create `GenomicRanges` objects for 
+Now we can use these data.frames to create `GenomicRanges` objects for
 each peak set.
 
 ```{r convertPeaks}
@@ -186,7 +186,7 @@ Now we can combine the ranges into a single peak set.
 combined.peaks = reduce(x = c(gr.1, gr.2, gr.3))
 ```
 
-If you are concerned about potential drawbacks of using **Raw Overlap** 
+If you are concerned about potential drawbacks of using **Raw Overlap**
 peak merging strategy, we can check how it affects the distribution of peak
 widths.
 
@@ -205,30 +205,30 @@ ggplot(data = peak_widths, aes(x = PeakWidth, col = PeakSet))+
 ```
 
 We can see that Combined peak set has consistently broader peaks, which is
-expected from the way smaller sample-specific peaks are merged into one 
+expected from the way smaller sample-specific peaks are merged into one
 bigger peak. The density distribution may not be indicative of the rare
 extreme events (narrowest and widest peaks), so we may want to check manually
 the top and bottom of the distribution.
 
 ```{r sliceMax}
-peak_widths %>% 
-  group_by(PeakSet) %>% 
+peak_widths %>%
+  group_by(PeakSet) %>%
   slice_max(n=10, order_by=PeakWidth) %>%
-  mutate(rank = 1:10) %>% 
+  mutate(rank = 1:10) %>%
   pivot_wider(names_from = PeakSet, values_from = PeakWidth, id_cols = rank)
 
 ```
 
 ```{r sliceMin}
-peak_widths %>% 
-  group_by(PeakSet) %>% 
+peak_widths %>%
+  group_by(PeakSet) %>%
   slice_min(n=10, order_by=PeakWidth) %>%
-  mutate(rank = 1:10) %>% 
+  mutate(rank = 1:10) %>%
   pivot_wider(names_from = PeakSet, values_from = PeakWidth, id_cols = rank)
 ```
 
 If there are any anomalous peaks that arise from the merging we can filter
-them out. Additionally we can remove all non-standard chromosomes. 
+them out. Additionally we can remove all non-standard chromosomes.
 
 ```{r filterPeaks}
 # Filter out bad peaks based on length
@@ -244,12 +244,12 @@ combined.peaks
 ### Create Fragment objects
 
 To quantify our combined set of peaks we’ll need to create a `Fragment` object
-for each experiment. The `Fragment` class is a specialized class defined in 
+for each experiment. The `Fragment` class is a specialized class defined in
 Signac to hold all the information related to a single fragment file.
 
 #### Reading and filtering the cell/barcode metadata
 
-First we’ll load the cell metadata for each experiment so that we know 
+First we’ll load the cell metadata for each experiment so that we know
 what cell barcodes are contained in each file
 
 ```{r loadMeta}
@@ -279,28 +279,28 @@ md.3 = read.table(
 )[-1, ] # remove the first row
 ```
 
-Now we can filter out non-cells and low quality cells. `singlecell.csv` 
-metadata file already has quite a lot of QC information similar to what 
-you produced in the `QClustering` vignette. You can check all of the options 
-available 
+Now we can filter out non-cells and low quality cells. `singlecell.csv`
+metadata file already has quite a lot of QC information similar to what
+you produced in the `QClustering` vignette. You can check all of the options
+available
 [here](https://support.10xgenomics.com/single-cell-atac/software/pipelines/latest/output/singlecell),
 but for simplicity we will just use 2 of the available parameters:
 
 - **is_cell_barcode**: binary indicator of whether barcode is associated with
-                       a cell according to cellranger's automated cell 
+                       a cell according to cellranger's automated cell
                        calling algorithm.
-- **passed_filters**: number of non-duplicate, usable read-pairs 
+- **passed_filters**: number of non-duplicate, usable read-pairs
                       i.e. "fragments".
-                       
+
 ```{r filterMetaNaive}
 # perform an initial filtering of low count cells and non-cells
 md.1 = md.1[as.logical(md.1$is__cell_barcode) & (md.1$passed_filters > 1000), ]
 md.2 = md.2[as.logical(md.2$is__cell_barcode) & (md.2$passed_filters > 1000), ]
 md.3 = md.3[as.logical(md.3$is__cell_barcode) & (md.3$passed_filters > 1000), ]
-# As a side note. The cellranger-atac version 2.0 that we ran during testing 
+# As a side note. The cellranger-atac version 2.1.0 that we ran during testing
 # produced a singlecell.csv file with the `is__cell_barcode` column spelled with
 # a double underscore. This is probably an innocent bug, that would be fixed
-# in later versions.  
+# in later versions.
 ```
 
 Alternatively to the last step we could have used the Seurat objects that you
@@ -321,11 +321,11 @@ md.3 = md.3[cells_from_seurat_sample3, ]
 
 #### Creating the fragment objects
 
-Now we can create `Fragment` objects using the `CreateFragmentObject` 
+Now we can create `Fragment` objects using the `CreateFragmentObject`
 function. The `CreateFragmentObject`
 function performs some checks to ensure that the file is present on disk and
 that it is compressed and indexed, computes the MD5 sum for the file and the
-tabix index so that we can tell if the file is modified at any point, and 
+tabix index so that we can tell if the file is modified at any point, and
 checks that the expected cells are present in the file.
 
 ```{r createFragment}
@@ -347,7 +347,7 @@ frags.3 = CreateFragmentObject(
 
 ### Quantify peaks in each dataset
 
-We can now create a matrix of peaks x cell for each sample using the 
+We can now create a matrix of peaks x cell for each sample using the
 `FeatureMatrix` function. This function is parallelized using the
 `future` package.
 
@@ -371,20 +371,20 @@ sample3.counts = FeatureMatrix(
 
 ### Create Seurat objects
 
-We will now use the quantified matrices to create a Seurat object for each 
+We will now use the quantified matrices to create a Seurat object for each
 dataset, storing the Fragment object for each dataset in the assay.
 
 ```{r createObjects}
 # First we create a ChromatinAssay object
 sample1_assay = CreateChromatinAssay(
-  sample1.counts, 
+  sample1.counts,
   fragments = frags.1
 )
 # Then we create a Seurat object based on this ChromatinAssay
 sample1 = CreateSeuratObject(
-  sample1_assay, 
-  assay = "ATAC", 
-  project = "mouse_ES_LIF", 
+  sample1_assay,
+  assay = "ATAC",
+  project = "mouse_ES_LIF",
   meta.data=md.1
 )
 
@@ -395,7 +395,7 @@ sample2_assay = CreateChromatinAssay(
 )
 # Then we create a Seurat object based on this ChromatinAssay
 sample2 = CreateSeuratObject(
-  sample2_assay, 
+  sample2_assay,
   assay = "ATAC",
   project = "mouse_ES_LIF",
   meta.data=md.2
@@ -418,9 +418,9 @@ sample3 = CreateSeuratObject(
 
 ###  Merge Seurat objects
 
-Now that the objects each contain an assay with the same set of features, 
-we can use the standard `merge` function to merge the objects. This will 
-also merge all the fragment objects so that we retain the fragment 
+Now that the objects each contain an assay with the same set of features,
+we can use the standard `merge` function to merge the objects. This will
+also merge all the fragment objects so that we retain the fragment
 information for each cell in the final merged object.
 
 ```{r mergeObjects}
@@ -449,7 +449,7 @@ combined
 ## Validate our integration
 
 We finally have our combined object. Now we can perform standard
-pre-processing, keeping track of each cell's dataset of origin. We can 
+pre-processing, keeping track of each cell's dataset of origin. We can
 check for any batch effects visually on a UMAP plot.
 
 ```{r preProcess}
@@ -464,13 +464,13 @@ combined = RunUMAP(combined, dims = 2:50, reduction = 'lsi', verbose = F)
 DimPlot(combined, group.by = 'dataset', pt.size = 0.5)
 ```
 
-The merged object contains all fragment objects, and contains an 
-internal mapping of cell names in the object to the cell names in each 
-fragment file so that we can retrieve information from the files without 
-having to change the cell names in each fragment file. We can check that 
+The merged object contains all fragment objects, and contains an
+internal mapping of cell names in the object to the cell names in each
+fragment file so that we can retrieve information from the files without
+having to change the cell names in each fragment file. We can check that
 functions that pull data from the fragment files work as expected on the
 merged object by plotting a region of the genome. Here we can can also check
-for any significant differences between datasets/batches, although it may 
+for any significant differences between datasets/batches, although it may
 depend heavily on the genomice region in question.
 
 ```{r covPlot}
@@ -481,41 +481,41 @@ CoveragePlot(
 )
 ```
 
-Depending on the results of this section we may or may not need to perform 
+Depending on the results of this section we may or may not need to perform
 further steps in order to mitigate any systematic batch effects between
 your samples. Whether or not this is needed you can gauge by how much
 sample dependent clustering is present in your merged object. If the cells
 from different datasets are more or less evenly distributed across your UMAP
 plot you can assume that there is no major batch effect that needs correcting.
-If the cells cluster primarily based on the dataset or within each cell 
+If the cells cluster primarily based on the dataset or within each cell
 type-specific cluster they further subcluster based on the initial dataset
 you probably need to correct this dataset-specific variation in order to avoid
 any downstream  artefacts stemming from this dataset-specific variation.
 
-**P.S.**: One special case you need to keep in mind in your analyses is 
-when you observe a cluster that fully or mostly corresponds to one dataset, 
+**P.S.**: One special case you need to keep in mind in your analyses is
+when you observe a cluster that fully or mostly corresponds to one dataset,
 but you don't observe similar imbalance in other clusters. This may
 correspond to a batch effect, but in many cases it can represent genuine
-heterogeneity in cell type composition between your datasets. 
+heterogeneity in cell type composition between your datasets.
 
 ## Integration
 
 If you are following this part of the vignette it means that you found
-significant evidence for a batch effect between the datasets you were 
+significant evidence for a batch effect between the datasets you were
 integrating in the previous steps.
 
 We will integrate your datasets, using tools available in the Seurat package.
-This method is based on identifying so-called **mutual nearest neighbors** 
+This method is based on identifying so-called **mutual nearest neighbors**
 ([Haghverdi et al., 2018](https://www.nature.com/articles/nbt.4091)) or
-**anchors** 
+**anchors**
 ([Stuart, Butler, et al., 2019](https://www.cell.com/cell/fulltext/S0092-8674(19)30559-8)).
 These are pairs of cells from different datasets that correspond to the same
-or similar cell state. Once you have this set of **anchors** you can find a 
+or similar cell state. Once you have this set of **anchors** you can find a
 transformation that would project these anchors from dataset 1 into the
 space of the dataset 2 while minimising the distance between the projection
 it's corresponding anchor in dataset 2.
 
-Following figure from 
+Following figure from
 [Haghverdi et al., 2018](https://www.nature.com/articles/nbt.4091)
 illustrates the general idea behind the approach.
 
@@ -525,23 +525,23 @@ illustrates the general idea behind the approach.
 
 Rather than integrating the normalized data matrix, as is typically done
 for scRNA-seq data, we'll integrate the low-dimensional cell embeddings
-(the LSI coordinates) across the datasets using the `IntegrateEmbeddings` 
-function. This is much better suited to scATAC-seq data, as we typically 
-have a very sparse matrix with a large number of features. Note that this 
+(the LSI coordinates) across the datasets using the `IntegrateEmbeddings`
+function. This is much better suited to scATAC-seq data, as we typically
+have a very sparse matrix with a large number of features. Note that this
 requires that we first compute an uncorrected LSI embedding using the
 merged dataset (as we did above).
 
 ```{r sampleLSE}
-sample1 = FindTopFeatures(sample1, min.cutoff = 20) 
+sample1 = FindTopFeatures(sample1, min.cutoff = 20)
 sample1 = RunTFIDF(sample1)
 sample1 = RunSVD(sample1)
 
 
-sample2 = FindTopFeatures(sample2, min.cutoff = 20) 
+sample2 = FindTopFeatures(sample2, min.cutoff = 20)
 sample2 = RunTFIDF(sample2)
 sample2 = RunSVD(sample2)
 
-sample3 = FindTopFeatures(sample3, min.cutoff = 20) 
+sample3 = FindTopFeatures(sample3, min.cutoff = 20)
 sample3 = RunTFIDF(sample3)
 sample3 = RunSVD(sample3)
 
@@ -549,9 +549,9 @@ sample3 = RunSVD(sample3)
 
 ### Identify integration anchors
 
-To find integration anchors between the two datasets, we need to project them 
+To find integration anchors between the two datasets, we need to project them
 into a shared low-dimensional space. To do this, we'll use reciprocal LSI
-projection (projecting each dataset into the others LSI space) by 
+projection (projecting each dataset into the others LSI space) by
 setting `reduction="rlsi"`.
 
 ```{r findAnchors}
@@ -581,7 +581,7 @@ integrated = IntegrateEmbeddings(
 ### Check integration results
 
 Now that we have our final integration in the LSI space we can make another
-UMAP plot to see whether is was successful. 
+UMAP plot to see whether is was successful.
 
 ```{r checkIntegration}
 # create a new UMAP using the integrated embeddings
@@ -591,16 +591,16 @@ DimPlot(integrated, group.by = "dataset")
 
 Hopefully now all the samples are well integrated.
 
-**P.S.**: The method we presented here is not the only one that can correct 
-batch effects in single cell data. But one needs to pay attention when applying 
+**P.S.**: The method we presented here is not the only one that can correct
+batch effects in single cell data. But one needs to pay attention when applying
 these tools to whether they were designed to work specifically with scRNA data.
-In case of the **anchor** based integration the method can be easily extended 
+In case of the **anchor** based integration the method can be easily extended
 for use with scATAC data, but even in this case some adjustments were required.
-As was mentioned above partly due to extreme sparsity of the data we had 
-to use reciprocal LSI for anchor identification instead of 
-Canonical Correlation Analysis which is the original approach described for 
-scRNA data. Another popular tool for data integration is 
-[Harmony](https://www.nature.com/articles/s41592-019-0619-0), which is the 
+As was mentioned above partly due to extreme sparsity of the data we had
+to use reciprocal LSI for anchor identification instead of
+Canonical Correlation Analysis which is the original approach described for
+scRNA data. Another popular tool for data integration is
+[Harmony](https://www.nature.com/articles/s41592-019-0619-0), which is the
 default approach for dealing with batch effects when using
 [ArchR](https://www.archrproject.com/bookdown/batch-effect-correction-wtih-harmony.html),
 but it can also be used with a Seurat object.
