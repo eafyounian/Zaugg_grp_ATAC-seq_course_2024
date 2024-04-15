@@ -12,6 +12,7 @@
 -   [x] [Kristy Ou – A multimodal approach to identify molecular drivers of follicular lymphoma transformation](presentations/epigenetic_changes_tFL_kou.pdf)
 -   [x] [Dirk Jürgensen (10x Genomics) - Sample Preparation for scATAC Assay: What are important factors (COMING SOON)](presentations/)
 -   [x] [Judith Zaugg - Overview of computational methods for integrating scATAC-Seq and scRNA-seq](presentations/2024-04-08_ATAC-seq_Lecture_Judith.pdf)
+-   [x] [Ivan Berest - Overview of single-cell ATAC computational tools](presentations/ATAC2024_IvanBerest.pdf)
 -   [x] [Vladimir Benes - Sequencing technologies (COMING SOON)](presentations/)
 
 
