@@ -266,10 +266,8 @@ minutes or so, so please be patient.
 
 
 ```{r runChromVAR}
-register(SerialParam())
-
-# Compute the GC content, region lengths, and dinucleotide base frequencies for regions in the assay and add to the feature metadata. This is needed for chromVAR to work
-# seu.s <- RegionStats(object = seu.s, genome = BSgenome.Mmusculus.UCSC.mm10)
+nCores = 6
+register(MulticoreParam(nCores, progressbar = TRUE))
 
 # Now we can run the chromVAR wrapper
 seu.s <- RunChromVAR(object = seu.s, genome = BSgenome.Mmusculus.UCSC.mm10, verbose = TRUE)

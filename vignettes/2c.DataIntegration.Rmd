@@ -139,10 +139,10 @@ peaks.
 
 ```{r readPeaks}
 # Make sure to have a trailing slash here
-outFolder="/home/max/Work/EMBL/PROJECTS/atac-seq_course_2022/data/"
-sample1Folder = paste0(outFolder, "samples/Subsample01Seed1/")
-sample2Folder = paste0(outFolder, "samples/Subsample01Seed2/")
-sample3Folder = paste0(outFolder, "samples/Subsample01Seed3/")
+outFolder="/g/teachinglab/data/ATA24-01/data_for_integration/"
+sample1Folder = paste0(outFolder, "group1/outs/")
+sample2Folder = paste0(outFolder, "group2/outs/")
+sample4Folder = paste0(outFolder, "group4/outs/")
 
 
 # read BED files containing sample-specific peaks as a data.frame
@@ -213,7 +213,7 @@ the top and bottom of the distribution.
 ```{r sliceMax}
 peak_widths %>%
   group_by(PeakSet) %>%
-  slice_max(n=10, order_by=PeakWidth) %>%
+  slice_max(n=10, order_by=PeakWidth, , with_ties = FALSE) %>%
   mutate(rank = 1:10) %>%
   pivot_wider(names_from = PeakSet, values_from = PeakWidth, id_cols = rank)
 

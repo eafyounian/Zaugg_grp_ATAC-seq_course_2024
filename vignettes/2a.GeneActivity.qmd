@@ -99,7 +99,7 @@ seu.s <- NormalizeData(
   object = seu.s,
   assay = newAssayName,
   normalization.method = 'LogNormalize',
-  scale.factor = median(seu.s@meta.data[,paste0("nCount_",newAssayName)]) #TODO: Replace without using @
+  scale.factor = median(seu.s@meta.data[,paste0("nCount_",newAssayName)]) 
 )
 
 # Change the default assay name to our new geneact name for this vignette
@@ -120,7 +120,7 @@ topMarkerGenesPerCluster = 3
 
 # Set identity of cells based on ATAC_snn_res.0.5 
 Idents(seu.s) <- seu.s$ATAC_snn_res.0.5
-markersGA <- FindAllMarkers(seu.s, only.pos = TRUE, min.pct = 0.1, logfc.threshold = 0.1, assay = newAssayName, verbose = F)
+markersGA <- FindAllMarkers(seu.s, only.pos = TRUE, min.pct = 0.1, logfc.threshold = 0.1, assay = newAssayName, verbose = FALSE)
 
 gr1 = markersGA %>%
     group_by(cluster) %>%
