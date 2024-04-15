@@ -13,7 +13,7 @@
 -   [Dirk Jürgensen (10x Genomics) - Sample Preparation for scATAC Assay: What are important factors (COMING SOON)](presentations/)
 -   [x] [Kristy Ou -- A multimodal approach to identify molecular drivers of follicular lymphoma transformation](presentations/Kristy%20Ou%20-%20Epigenetic%20changes%20underlying%20histologic%20transformation%20of%20follicular%20lymphoma.pdf)
 -   [x] [Judith Zaugg - Considerations for analysing single cell ATAC-seq data](presentations/Judith%20Zaugg%20-%20Considerations%20for%20analysing%20single%20cell%20ATAC-seq%20data.pdf)
--   [Jan Provaznik - AVITI data pre-processing (COMING SOON)](presentations/Jan%20Provaznik%20-%20AVITI%20data%20pre-processing.pdf)
+-   [Jan Provaznik - AVITI data pre-processing](presentations/Jan%20Provaznik%20-%20AVITI%20data%20pre-processing.pdf)
 -   [x] [Maksim Kholmatov - Introduction to Linux](presentations/Maksim%20Kholmatov%20-%20Introduction%20to%20Linux.pdf)
 -   [x] [Christian Arnold - Single-cell ATAC QC](presentations/Christian%20Arnold%20-%20Single-cell%20ATAC%20QC.pdf)
 -   [x] [Christian Arnold - Working with (big ) single-cell (ATAC) datasets](presentations/Christian%20Arnold%20-%20Working%20with%20(big%20)%20single-cell%20(ATAC)%20datasets.pdf)
