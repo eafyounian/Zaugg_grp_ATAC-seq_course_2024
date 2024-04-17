@@ -32,10 +32,10 @@
 -   Experimental part
     -   [x] [Karin Prummel -- Wetlab results: Pictures experimental part](results/Experimental_Practicals/20240408_wetlab-results.pdf)
     -   [x] [Bioanalyzer traces and a brief summary of the lab experiments](results/Experimental_Practicals/Bioanalyzer)
-    -   Raw sequencing data, per sample (time-limited download): COMING SOON
+    -   Raw sequencing data, per sample (time-limited download): A mail has been sent to you with download instructions
 -   Computational part
     -   [x] [Cell Ranger ATAC web summary reports for all groups and samples](results/Computational_practises/cellranger)
-    -   Cell Ranger ATAC outs folder including the stored R rds objects, per sample (time-limited download) (as input for the R part): COMING SOON
+    -   Cell Ranger ATAC outs folder including the stored R rds objects, per sample (time-limited download) (as input for the R part): A mail has been sent to you with download instructions
 
 ## Vignettes and Quiz
 
